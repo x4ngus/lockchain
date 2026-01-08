@@ -14,7 +14,7 @@ use lockchain_core::{
         self, bootstrap_plan, discover_topology, BootstrapOptions, BootstrapPlan,
         BootstrapTopology, ForgeMode, ProvisionOptions, WorkflowLevel, WorkflowReport,
     },
-    LockchainError, LockchainService, UnlockOptions,
+    LockchainError, LockchainService, UnlockOptions, Zeroizing,
 };
 use lockchain_luks::SystemLuksProvider;
 use lockchain_zfs::SystemZfsProvider;
@@ -85,14 +85,16 @@ enum Commands {
         filename: Option<String>,
 
         /// Optional fallback passphrase material to configure immediately.
+        /// WARNING: This will expose the passphrase in process listings. Consider using environment variables or prompts.
         #[arg(long)]
         passphrase: Option<String>,
 
         /// Existing LUKS passphrase used to enroll the generated key into a keyslot.
+        /// WARNING: This will expose the passphrase in process listings. Use --prompt-luks-passphrase instead.
         #[arg(long)]
         luks_passphrase: Option<String>,
 
-        /// Prompt interactively for the existing LUKS passphrase.
+        /// Prompt interactively for the existing LUKS passphrase (recommended for security).
         #[arg(long)]
         prompt_luks_passphrase: bool,
 
@@ -142,10 +144,11 @@ enum Commands {
         strict_usb: bool,
 
         /// Provide a fallback passphrase directly on the command line.
+        /// WARNING: This will expose the passphrase in process listings. Use --prompt-passphrase instead.
         #[arg(long)]
         passphrase: Option<String>,
 
-        /// Prompt interactively for the fallback passphrase.
+        /// Prompt interactively for the fallback passphrase (recommended for security).
         #[arg(long)]
         prompt_passphrase: bool,
 
@@ -164,10 +167,11 @@ enum Commands {
         strict_usb: bool,
 
         /// Provide a fallback passphrase directly on the command line.
+        /// WARNING: This will expose the passphrase in process listings. Use --prompt-passphrase instead.
         #[arg(long)]
         passphrase: Option<String>,
 
-        /// Prompt interactively for the fallback passphrase.
+        /// Prompt interactively for the fallback passphrase (recommended for security).
         #[arg(long)]
         prompt_passphrase: bool,
 
@@ -232,6 +236,7 @@ enum Commands {
         output: PathBuf,
 
         /// Provide the emergency passphrase directly.
+        /// WARNING: This will expose the passphrase in process listings. Consider reading from stdin or prompts.
         #[arg(long)]
         passphrase: Option<String>,
 
@@ -383,10 +388,18 @@ fn run() -> Result<()> {
                     );
                     Some(prompt_password("Existing LUKS passphrase: ")?)
                 } else {
+                    if luks_passphrase.is_some() {
+                        warn!("LUKS passphrase provided via command line - visible in process listings. Use --prompt-luks-passphrase for better security.");
+                    }
                     luks_passphrase
                 };
 
             let target = resolve_target(dataset, &config, provider_kind)?;
+
+            if passphrase.is_some() {
+                warn!("Fallback passphrase provided via command line - visible in process listings. Consider using environment variables or interactive prompts for better security.");
+            }
+
             let options = ProvisionOptions {
                 usb_device: device,
                 mountpoint: mount,
@@ -739,7 +752,10 @@ fn run() -> Result<()> {
             }
 
             let passphrase = match passphrase {
-                Some(p) => p,
+                Some(p) => {
+                    warn!("Emergency passphrase provided via command line - visible in process listings. Consider using stdin or prompts for better security.");
+                    p
+                }
                 None => prompt_password(format!("Emergency passphrase for {target}: "))?,
             };
 
@@ -1188,15 +1204,16 @@ fn build_unlock_options(
             path.display(),
             key_bytes.len()
         );
-        options.key_override = Some(key_bytes);
+        options.key_override = Some(Zeroizing::new(key_bytes));
     }
 
     if let Some(pass) = passphrase {
-        options.fallback_passphrase = Some(pass);
+        warn!("Passphrase provided via command line - visible in process listings. Use --prompt-passphrase for better security.");
+        options.fallback_passphrase = Some(Zeroizing::new(pass));
     } else if prompt_passphrase {
         let prompt = format!("Fallback passphrase for {}", target);
         let value = prompt_password(prompt)?;
-        options.fallback_passphrase = Some(value);
+        options.fallback_passphrase = Some(Zeroizing::new(value));
     }
 
     Ok(options)

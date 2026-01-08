@@ -14,11 +14,22 @@ use std::time::Duration;
 use zeroize::Zeroizing;
 
 /// Options that tune the unlock workflow.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct UnlockOptions {
     pub strict_usb: bool,
-    pub fallback_passphrase: Option<String>,
-    pub key_override: Option<Vec<u8>>,
+    pub fallback_passphrase: Option<Zeroizing<String>>,
+    pub key_override: Option<Zeroizing<Vec<u8>>>,
+}
+
+// Manual Clone implementation to ensure sensitive data is properly zeroized
+impl Clone for UnlockOptions {
+    fn clone(&self) -> Self {
+        Self {
+            strict_usb: self.strict_usb,
+            fallback_passphrase: self.fallback_passphrase.as_ref().map(|p| Zeroizing::new(p.to_string())),
+            key_override: self.key_override.as_ref().map(|k| Zeroizing::new(k.to_vec())),
+        }
+    }
 }
 
 /// Result of an unlock attempt.
@@ -165,7 +176,8 @@ impl<P: KeyProvider<Error = LockchainError>> LockchainService<P> {
         options: &UnlockOptions,
     ) -> LockchainResult<Zeroizing<Vec<u8>>> {
         if let Some(raw) = &options.key_override {
-            return Ok(Zeroizing::new(raw.clone()));
+            // Already wrapped in Zeroizing, just clone the protected data
+            return Ok(Zeroizing::new(raw.to_vec()));
         }
 
         let usb_key_path = self.config.key_hex_path();
@@ -196,8 +208,9 @@ impl<P: KeyProvider<Error = LockchainError>> LockchainService<P> {
             .as_ref()
             .ok_or_else(|| LockchainError::MissingKeySource(dataset.to_string()))?;
 
-        let passphrase = Zeroizing::new(passphrase.clone().into_bytes());
-        let key = self.derive_fallback_key(&passphrase)?;
+        // Already wrapped in Zeroizing, convert to bytes directly
+        let passphrase_bytes = Zeroizing::new(passphrase.as_bytes().to_vec());
+        let key = self.derive_fallback_key(&passphrase_bytes)?;
         Ok(key)
     }
 

@@ -121,7 +121,8 @@ ensure_rust_toolchain() {
     return
   fi
 
-  local rustup_log="/tmp/lockchain-rustup-${RANDOM}.log"
+  local rustup_log
+  rustup_log=$(mktemp /tmp/lockchain-rustup.XXXXXX)
   local install_script
   install_script=$(cat <<EOF
 set -euo pipefail

@@ -12,7 +12,7 @@ use lockchain_core::{
     error::LockchainError,
     provider::{DatasetKeyDescriptor, KeyState},
     service::{LockchainService, UnlockOptions},
-    LockchainConfig,
+    LockchainConfig, Zeroizing,
 };
 use lockchain_zfs::SystemZfsProvider;
 use ratatui::{
@@ -220,7 +220,7 @@ impl App {
             strict_usb: self.strict_usb,
             ..UnlockOptions::default()
         };
-        options.fallback_passphrase = Some(passphrase);
+        options.fallback_passphrase = Some(Zeroizing::new(passphrase));
 
         match self.service.unlock_with_retry(&dataset, options) {
             Ok(report) => {

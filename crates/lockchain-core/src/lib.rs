@@ -21,3 +21,6 @@ pub use provider::{
     ZfsProvider,
 };
 pub use service::{LockchainService, UnlockOptions, UnlockReport};
+
+// Re-export zeroize for consumers that need to create UnlockOptions with sensitive data
+pub use zeroize::Zeroizing;

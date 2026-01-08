@@ -229,8 +229,13 @@ main() {
             warn "Skipping unsafe mapping name '$mapping' for key staging."
             continue
         fi
-        local tmp="$DEST_DIR/.${mapping}.key.$$"
+        local tmp
         local dest="$DEST_DIR/${mapping}.key"
+        # Use mktemp for secure temporary file creation
+        if ! tmp=$(mktemp "$DEST_DIR/.${mapping}.key.XXXXXX" 2>/dev/null); then
+            warn "Failed to create temporary file for $mapping."
+            continue
+        fi
         if ! cat "$source_key" >"$tmp" 2>/dev/null; then
             warn "Failed to stage key for $mapping."
             rm -f "$tmp" 2>/dev/null || true
