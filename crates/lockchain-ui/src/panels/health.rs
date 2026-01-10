@@ -14,11 +14,21 @@ use lockchain_core::provider::ProviderKind;
 use super::ProviderPanel;
 use crate::dispatcher::WorkflowCommand;
 
+/// Per-provider state snapshot.
+#[derive(Debug, Clone, Default)]
+struct ProviderState {
+    dataset_input: String,
+}
+
 /// State for the Health panel.
 pub struct HealthPanel {
     current_provider: ProviderKind,
 
-    // Dataset for self-test
+    // Per-provider state snapshots
+    zfs_state: ProviderState,
+    luks_state: ProviderState,
+
+    // Dataset for self-test (active state)
     dataset_input: String,
 }
 
@@ -43,8 +53,34 @@ impl HealthPanel {
     pub fn new(provider: ProviderKind) -> Self {
         Self {
             current_provider: provider,
+            zfs_state: ProviderState::default(),
+            luks_state: ProviderState::default(),
             dataset_input: String::new(),
         }
+    }
+
+    /// Saves current state to provider snapshot.
+    fn save_current_state(&mut self) {
+        let state = ProviderState {
+            dataset_input: self.dataset_input.clone(),
+        };
+
+        match self.current_provider {
+            ProviderKind::Zfs => self.zfs_state = state,
+            ProviderKind::Luks => self.luks_state = state,
+            ProviderKind::Auto => {} // Don't save for Auto
+        }
+    }
+
+    /// Restores state from provider snapshot.
+    fn restore_provider_state(&mut self, provider: ProviderKind) {
+        let state = match provider {
+            ProviderKind::Zfs => &self.zfs_state,
+            ProviderKind::Luks => &self.luks_state,
+            ProviderKind::Auto => return, // Don't restore for Auto
+        };
+
+        self.dataset_input = state.dataset_input.clone();
     }
 }
 
@@ -142,6 +178,13 @@ impl ProviderPanel for HealthPanel {
     }
 
     fn on_provider_changed(&mut self, kind: ProviderKind) {
+        // Save current provider state before switching
+        self.save_current_state();
+
+        // Switch provider
         self.current_provider = kind;
+
+        // Restore saved state for new provider
+        self.restore_provider_state(kind);
     }
 }

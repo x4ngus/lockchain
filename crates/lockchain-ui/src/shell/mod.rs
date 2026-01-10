@@ -211,6 +211,7 @@ impl AppShell {
                 }
 
                 self.dispatcher.start_execution();
+                self.header.set_workflow_executing(true); // Disable provider switching
                 self.mission_report
                     .start_mission("Executing workflow...".to_string());
 
@@ -237,6 +238,7 @@ impl AppShell {
 
             AppShellMessage::WorkflowFinished(result) => {
                 self.dispatcher.finish_execution();
+                self.header.set_workflow_executing(false); // Re-enable provider switching
 
                 match result {
                     Ok(report) => {

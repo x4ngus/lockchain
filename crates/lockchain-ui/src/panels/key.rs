@@ -15,17 +15,39 @@ use lockchain_core::workflow::{ForgeMode, ProvisionOptions};
 use super::ProviderPanel;
 use crate::dispatcher::WorkflowCommand;
 
+/// Per-provider state snapshot.
+#[derive(Debug, Clone)]
+struct ProviderState {
+    dataset_input: String,
+    recovery_input: String,
+    active_mode: KeyMode,
+}
+
+impl Default for ProviderState {
+    fn default() -> Self {
+        Self {
+            dataset_input: String::new(),
+            recovery_input: String::new(),
+            active_mode: KeyMode::Forge,
+        }
+    }
+}
+
 /// State for the Key panel.
 pub struct KeyPanel {
     current_provider: ProviderKind,
 
-    // Forge inputs
+    // Per-provider state snapshots
+    zfs_state: ProviderState,
+    luks_state: ProviderState,
+
+    // Forge inputs (active state)
     dataset_input: String,
 
-    // Recovery inputs
+    // Recovery inputs (active state)
     recovery_input: String,
 
-    // UI state
+    // UI state (active state)
     active_mode: KeyMode,
 }
 
@@ -62,10 +84,40 @@ impl KeyPanel {
     pub fn new(provider: ProviderKind) -> Self {
         Self {
             current_provider: provider,
+            zfs_state: ProviderState::default(),
+            luks_state: ProviderState::default(),
             dataset_input: String::new(),
             recovery_input: String::new(),
             active_mode: KeyMode::Forge,
         }
+    }
+
+    /// Saves current state to provider snapshot.
+    fn save_current_state(&mut self) {
+        let state = ProviderState {
+            dataset_input: self.dataset_input.clone(),
+            recovery_input: self.recovery_input.clone(),
+            active_mode: self.active_mode,
+        };
+
+        match self.current_provider {
+            ProviderKind::Zfs => self.zfs_state = state,
+            ProviderKind::Luks => self.luks_state = state,
+            ProviderKind::Auto => {} // Don't save for Auto
+        }
+    }
+
+    /// Restores state from provider snapshot.
+    fn restore_provider_state(&mut self, provider: ProviderKind) {
+        let state = match provider {
+            ProviderKind::Zfs => &self.zfs_state,
+            ProviderKind::Luks => &self.luks_state,
+            ProviderKind::Auto => return, // Don't restore for Auto
+        };
+
+        self.dataset_input = state.dataset_input.clone();
+        self.recovery_input = state.recovery_input.clone();
+        self.active_mode = state.active_mode;
     }
 }
 
@@ -191,8 +243,14 @@ impl ProviderPanel for KeyPanel {
     }
 
     fn on_provider_changed(&mut self, kind: ProviderKind) {
+        // Save current provider state before switching
+        self.save_current_state();
+
+        // Switch provider
         self.current_provider = kind;
-        // Note: ZFS supports forging, LUKS only supports recovery in UI
+
+        // Restore saved state for new provider
+        self.restore_provider_state(kind);
     }
 }
 
