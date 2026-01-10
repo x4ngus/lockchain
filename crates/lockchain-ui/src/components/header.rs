@@ -1,6 +1,9 @@
 //! Header component with navigation and provider selector.
 
-use iced::{widget::{row, button, text, container}, Element, Length, Alignment};
+use iced::{
+    widget::{button, container, row, text},
+    Alignment, Element, Length,
+};
 use lockchain_core::provider::ProviderKind;
 
 use crate::panels::PanelKind;
@@ -40,10 +43,7 @@ impl HeaderState {
     }
 
     /// Renders the header with navigation tabs and provider selector.
-    pub fn view(
-        &self,
-        _active_panel: PanelKind,
-    ) -> Element<'_, HeaderMessage> {
+    pub fn view(&self, _active_panel: PanelKind) -> Element<'_, HeaderMessage> {
         // Navigation tabs
         let mut tabs = row![].spacing(8).align_y(Alignment::Center);
 
@@ -58,13 +58,27 @@ impl HeaderState {
         }
 
         // Provider selector using buttons for now (pick_list requires Display trait)
-        let zfs_btn = button(text(if self.current_provider == ProviderKind::Zfs { "[ZFS]" } else { "ZFS" }).size(14))
-            .padding([6, 12])
-            .on_press(HeaderMessage::ProviderSelected(ProviderKind::Zfs));
+        let zfs_btn = button(
+            text(if self.current_provider == ProviderKind::Zfs {
+                "[ZFS]"
+            } else {
+                "ZFS"
+            })
+            .size(14),
+        )
+        .padding([6, 12])
+        .on_press(HeaderMessage::ProviderSelected(ProviderKind::Zfs));
 
-        let luks_btn = button(text(if self.current_provider == ProviderKind::Luks { "[LUKS]" } else { "LUKS" }).size(14))
-            .padding([6, 12])
-            .on_press(HeaderMessage::ProviderSelected(ProviderKind::Luks));
+        let luks_btn = button(
+            text(if self.current_provider == ProviderKind::Luks {
+                "[LUKS]"
+            } else {
+                "LUKS"
+            })
+            .size(14),
+        )
+        .padding([6, 12])
+        .on_press(HeaderMessage::ProviderSelected(ProviderKind::Luks));
 
         let provider_selector = row![zfs_btn, luks_btn].spacing(8);
 
@@ -78,8 +92,6 @@ impl HeaderState {
         .padding(12)
         .align_y(Alignment::Center);
 
-        container(content)
-            .width(Length::Fill)
-            .into()
+        container(content).width(Length::Fill).into()
     }
 }

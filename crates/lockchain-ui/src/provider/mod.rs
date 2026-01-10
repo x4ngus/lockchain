@@ -8,11 +8,11 @@ use std::sync::{Arc, Mutex};
 
 use lockchain_core::config::LockchainConfig;
 use lockchain_core::provider::ProviderKind;
-use lockchain_zfs::SystemZfsProvider;
 use lockchain_luks::SystemLuksProvider;
+use lockchain_zfs::SystemZfsProvider;
 
-pub mod zfs_adapter;
 pub mod luks_adapter;
+pub mod zfs_adapter;
 
 /// Wrapper for provider state and configuration.
 ///
@@ -41,7 +41,8 @@ impl ProviderContext {
         let config = LockchainConfig::load(&config_path)
             .map_err(|e| format!("Failed to load config: {}", e))?;
 
-        let current_kind = config.resolve_provider_kind()
+        let current_kind = config
+            .resolve_provider_kind()
             .map_err(|e| format!("Failed to resolve provider: {}", e))?;
 
         // Create providers from config
@@ -72,10 +73,13 @@ impl ProviderContext {
 
         // Update config
         {
-            let mut config = self.config.lock()
+            let mut config = self
+                .config
+                .lock()
                 .map_err(|e| format!("Failed to lock config: {}", e))?;
             config.provider.r#type = kind;
-            config.save()
+            config
+                .save()
                 .map_err(|e| format!("Failed to save config: {}", e))?;
         }
 
@@ -103,7 +107,8 @@ impl ProviderContext {
     /// Returns a snapshot of the current config.
     #[allow(dead_code)]
     pub fn config_snapshot(&self) -> Result<LockchainConfig, String> {
-        self.config.lock()
+        self.config
+            .lock()
             .map(|guard| guard.clone())
             .map_err(|e| format!("Failed to lock config: {}", e))
     }
@@ -114,12 +119,15 @@ impl ProviderContext {
     where
         F: FnOnce(&mut LockchainConfig) -> Result<(), String>,
     {
-        let mut config = self.config.lock()
+        let mut config = self
+            .config
+            .lock()
             .map_err(|e| format!("Failed to lock config: {}", e))?;
 
         f(&mut config)?;
 
-        config.save()
+        config
+            .save()
             .map_err(|e| format!("Failed to save config: {}", e))?;
 
         Ok(())

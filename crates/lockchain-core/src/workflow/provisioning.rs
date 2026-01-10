@@ -2443,7 +2443,10 @@ mod tests {
         assert_eq!(sanitize(None), None);
         assert_eq!(sanitize(Some(String::new())), None);
         assert_eq!(sanitize(Some("  ".to_string())), None);
-        assert_eq!(sanitize(Some("value".to_string())), Some("value".to_string()));
+        assert_eq!(
+            sanitize(Some("value".to_string())),
+            Some("value".to_string())
+        );
     }
 
     #[test]
@@ -2749,10 +2752,7 @@ mod tests {
         // This will succeed on systems with dracut or initramfs-tools
         assert!(result.is_ok() || result.is_err());
         if let Ok(flavor) = result {
-            assert!(
-                flavor == InitramfsFlavor::Dracut
-                || flavor == InitramfsFlavor::InitramfsTools
-            );
+            assert!(flavor == InitramfsFlavor::Dracut || flavor == InitramfsFlavor::InitramfsTools);
         }
     }
 
@@ -2782,7 +2782,9 @@ mod tests {
                 askpass: false,
                 askpass_path: None,
                 passphrase_salt: Some("0123456789abcdef0123456789abcdef".to_string()),
-                passphrase_xor: Some("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string()),
+                passphrase_xor: Some(
+                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string(),
+                ),
                 passphrase_iters: 250_000,
             },
             retry: crate::config::RetryCfg::default(),
@@ -2795,10 +2797,7 @@ mod tests {
         fs::write(dir.path().join("key.raw"), &key_material).unwrap();
 
         // Test with valid passphrase
-        let result = update_fallback_passphrase(
-            &mut config,
-            Some("new-passphrase".to_string()),
-        );
+        let result = update_fallback_passphrase(&mut config, Some("new-passphrase".to_string()));
 
         assert!(result.is_ok());
 
@@ -2828,7 +2827,9 @@ mod tests {
                 askpass: true,
                 askpass_path: Some("/usr/bin/systemd-ask-password".to_string()),
                 passphrase_salt: Some("0123456789abcdef0123456789abcdef".to_string()),
-                passphrase_xor: Some("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string()),
+                passphrase_xor: Some(
+                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string(),
+                ),
                 passphrase_iters: 250_000,
             },
             retry: crate::config::RetryCfg::default(),
@@ -2837,12 +2838,18 @@ mod tests {
         };
 
         // Verify templates contain expected placeholders
-        assert!(LOCKCHAIN_LOAD_KEY_TEMPLATE.contains("#!/bin/bash") ||
-                LOCKCHAIN_LOAD_KEY_TEMPLATE.contains("#!/usr/bin/env bash"));
-        assert!(LOCKCHAIN_MODULE_SETUP_TEMPLATE.contains("#!/bin/bash") ||
-                LOCKCHAIN_MODULE_SETUP_TEMPLATE.contains("#!/usr/bin/env bash"));
-        assert!(LOCKCHAIN_CRYPTSETUP_KEYS_TEMPLATE.contains("#!/bin/bash") ||
-                LOCKCHAIN_CRYPTSETUP_KEYS_TEMPLATE.contains("#!/usr/bin/env bash"));
+        assert!(
+            LOCKCHAIN_LOAD_KEY_TEMPLATE.contains("#!/bin/bash")
+                || LOCKCHAIN_LOAD_KEY_TEMPLATE.contains("#!/usr/bin/env bash")
+        );
+        assert!(
+            LOCKCHAIN_MODULE_SETUP_TEMPLATE.contains("#!/bin/bash")
+                || LOCKCHAIN_MODULE_SETUP_TEMPLATE.contains("#!/usr/bin/env bash")
+        );
+        assert!(
+            LOCKCHAIN_CRYPTSETUP_KEYS_TEMPLATE.contains("#!/bin/bash")
+                || LOCKCHAIN_CRYPTSETUP_KEYS_TEMPLATE.contains("#!/usr/bin/env bash")
+        );
 
         // Verify service templates are valid systemd units
         assert!(LOCKCHAIN_SERVICE_TEMPLATE.contains("[Unit]"));

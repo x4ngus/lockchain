@@ -4,14 +4,17 @@
 
 use std::path::PathBuf;
 
-use iced::{Task, Element, Theme};
+use iced::{Element, Task, Theme};
 use lockchain_core::config::DEFAULT_CONFIG_PATH;
 use lockchain_core::provider::ProviderKind;
 
-use crate::panels::{PanelKind, ProviderPanel, targets::TargetsPanel, key::KeyPanel, settings::SettingsPanel, health::HealthPanel};
-use crate::provider::ProviderContext;
+use crate::components::{HeaderState, MissionReportState, TerminalState};
 use crate::dispatcher::{CommandDispatcher, WorkflowCommand, WorkflowResult};
-use crate::components::{TerminalState, HeaderState, MissionReportState};
+use crate::panels::{
+    health::HealthPanel, key::KeyPanel, settings::SettingsPanel, targets::TargetsPanel, PanelKind,
+    ProviderPanel,
+};
+use crate::provider::ProviderContext;
 
 pub mod view;
 
@@ -72,7 +75,8 @@ impl AppShell {
         let current_provider = provider_ctx.current_provider();
 
         // Load targets from config
-        let targets = provider_ctx.config_arc()
+        let targets = provider_ctx
+            .config_arc()
             .lock()
             .map(|cfg| cfg.policy.targets.clone())
             .unwrap_or_default();
@@ -143,9 +147,10 @@ impl AppShell {
             }
 
             // Panel messages (delegate to panels)
-            AppShellMessage::TargetsMessage(msg) => {
-                self.targets_panel.update(msg).map(AppShellMessage::TargetsMessage)
-            }
+            AppShellMessage::TargetsMessage(msg) => self
+                .targets_panel
+                .update(msg)
+                .map(AppShellMessage::TargetsMessage),
             AppShellMessage::KeyMessage(msg) => {
                 // Check if this is a workflow request that needs to bubble up
                 if let crate::panels::key::KeyMessage::RequestWorkflow(command) = msg {
@@ -153,15 +158,18 @@ impl AppShell {
                 }
                 self.key_panel.update(msg).map(AppShellMessage::KeyMessage)
             }
-            AppShellMessage::SettingsMessage(msg) => {
-                self.settings_panel.update(msg).map(AppShellMessage::SettingsMessage)
-            }
+            AppShellMessage::SettingsMessage(msg) => self
+                .settings_panel
+                .update(msg)
+                .map(AppShellMessage::SettingsMessage),
             AppShellMessage::HealthMessage(msg) => {
                 // Check if this is a workflow request that needs to bubble up
                 if let crate::panels::health::HealthMessage::RequestWorkflow(command) = msg {
                     return Task::done(AppShellMessage::ExecuteWorkflow(command));
                 }
-                self.health_panel.update(msg).map(AppShellMessage::HealthMessage)
+                self.health_panel
+                    .update(msg)
+                    .map(AppShellMessage::HealthMessage)
             }
 
             // Terminal messages
@@ -203,7 +211,8 @@ impl AppShell {
                 }
 
                 self.dispatcher.start_execution();
-                self.mission_report.start_mission("Executing workflow...".to_string());
+                self.mission_report
+                    .start_mission("Executing workflow...".to_string());
 
                 // Spawn async workflow
                 let provider_kind = self.provider_ctx.current_provider();
@@ -219,7 +228,8 @@ impl AppShell {
                             config,
                             &zfs_provider,
                             &luks_provider,
-                        ).await
+                        )
+                        .await
                     },
                     AppShellMessage::WorkflowFinished,
                 )

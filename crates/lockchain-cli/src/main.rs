@@ -380,19 +380,20 @@ fn run() -> Result<()> {
                 bail!("--luks-passphrase is only valid when provider.type resolves to `luks`");
             }
 
-            let luks_passphrase =
-                if matches!(provider_kind, ProviderKind::Luks) && prompt_luks_passphrase {
-                    ensure!(
-                        luks_passphrase.is_none(),
-                        "cannot combine --luks-passphrase with --prompt-luks-passphrase"
-                    );
-                    Some(prompt_password("Existing LUKS passphrase: ")?)
-                } else {
-                    if luks_passphrase.is_some() {
-                        warn!("LUKS passphrase provided via command line - visible in process listings. Use --prompt-luks-passphrase for better security.");
-                    }
-                    luks_passphrase
-                };
+            let luks_passphrase = if matches!(provider_kind, ProviderKind::Luks)
+                && prompt_luks_passphrase
+            {
+                ensure!(
+                    luks_passphrase.is_none(),
+                    "cannot combine --luks-passphrase with --prompt-luks-passphrase"
+                );
+                Some(prompt_password("Existing LUKS passphrase: ")?)
+            } else {
+                if luks_passphrase.is_some() {
+                    warn!("LUKS passphrase provided via command line - visible in process listings. Use --prompt-luks-passphrase for better security.");
+                }
+                luks_passphrase
+            };
 
             let target = resolve_target(dataset, &config, provider_kind)?;
 

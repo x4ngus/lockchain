@@ -1,8 +1,11 @@
 //! Terminal component for displaying command output and logs.
 
-use std::collections::VecDeque;
 use chrono::Utc;
-use iced::{widget::{column, text, container, scrollable}, Element, Length};
+use iced::{
+    widget::{column, container, scrollable, text},
+    Element, Length,
+};
+use std::collections::VecDeque;
 
 /// Terminal line level (maps to colors/styles).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -124,15 +127,10 @@ impl TerminalState {
                 TerminalLevel::Security => iced::Color::from_rgb(1.0, 0.0, 1.0),
             };
 
-            text(&line.message)
-                .color(color)
-                .size(14)
-                .into()
+            text(&line.message).color(color).size(14).into()
         });
 
-        let content = column(lines_view)
-            .spacing(4)
-            .padding(10);
+        let content = column(lines_view).spacing(4).padding(10);
 
         container(scrollable(content))
             .width(Length::Fill)

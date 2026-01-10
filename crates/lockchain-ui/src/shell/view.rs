@@ -1,6 +1,9 @@
 //! AppShell view rendering.
 
-use iced::{Element, widget::{column, container}, Length};
+use iced::{
+    widget::{column, container},
+    Element, Length,
+};
 
 use super::{AppShell, AppShellMessage};
 use crate::panels::PanelKind;
@@ -13,13 +16,10 @@ pub fn render(shell: &AppShell) -> Element<'_, AppShellMessage> {
     let content = column![
         // Header with navigation and provider selector
         render_header(shell),
-
         // Active panel content
         render_active_panel(shell),
-
         // Terminal (shared across all panels)
         render_terminal(shell),
-
         // Mission report / status bar
         render_mission_report(shell),
     ]
@@ -34,32 +34,32 @@ pub fn render(shell: &AppShell) -> Element<'_, AppShellMessage> {
 
 /// Renders the header with navigation tabs and provider selector.
 fn render_header(shell: &AppShell) -> Element<'_, AppShellMessage> {
-    shell.header.view(shell.active_panel)
-        .map(|msg| match msg {
-            crate::components::HeaderMessage::PanelSelected(panel) => {
-                AppShellMessage::PanelSelected(panel)
-            }
-            crate::components::HeaderMessage::ProviderSelected(kind) => {
-                AppShellMessage::ProviderSwitched(kind)
-            }
-        })
+    shell.header.view(shell.active_panel).map(|msg| match msg {
+        crate::components::HeaderMessage::PanelSelected(panel) => {
+            AppShellMessage::PanelSelected(panel)
+        }
+        crate::components::HeaderMessage::ProviderSelected(kind) => {
+            AppShellMessage::ProviderSwitched(kind)
+        }
+    })
 }
 
 /// Renders the currently active panel.
 fn render_active_panel(shell: &AppShell) -> Element<'_, AppShellMessage> {
     match shell.active_panel {
-        PanelKind::Targets => {
-            shell.targets_panel.view().map(AppShellMessage::TargetsMessage)
-        }
-        PanelKind::Key => {
-            shell.key_panel.view().map(AppShellMessage::KeyMessage)
-        }
-        PanelKind::Settings => {
-            shell.settings_panel.view().map(AppShellMessage::SettingsMessage)
-        }
-        PanelKind::Health => {
-            shell.health_panel.view().map(AppShellMessage::HealthMessage)
-        }
+        PanelKind::Targets => shell
+            .targets_panel
+            .view()
+            .map(AppShellMessage::TargetsMessage),
+        PanelKind::Key => shell.key_panel.view().map(AppShellMessage::KeyMessage),
+        PanelKind::Settings => shell
+            .settings_panel
+            .view()
+            .map(AppShellMessage::SettingsMessage),
+        PanelKind::Health => shell
+            .health_panel
+            .view()
+            .map(AppShellMessage::HealthMessage),
     }
 }
 
@@ -69,15 +69,9 @@ fn render_terminal(shell: &AppShell) -> Element<'_, AppShellMessage> {
         crate::components::TerminalMessage::InputChanged(input) => {
             AppShellMessage::TerminalInputChanged(input)
         }
-        crate::components::TerminalMessage::Submit => {
-            AppShellMessage::TerminalSubmit
-        }
-        crate::components::TerminalMessage::Clear => {
-            AppShellMessage::TerminalClear
-        }
-        crate::components::TerminalMessage::DownloadLogs => {
-            AppShellMessage::TerminalDownloadLogs
-        }
+        crate::components::TerminalMessage::Submit => AppShellMessage::TerminalSubmit,
+        crate::components::TerminalMessage::Clear => AppShellMessage::TerminalClear,
+        crate::components::TerminalMessage::DownloadLogs => AppShellMessage::TerminalDownloadLogs,
     })
 }
 

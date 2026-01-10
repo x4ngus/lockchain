@@ -26,8 +26,14 @@ impl Clone for UnlockOptions {
     fn clone(&self) -> Self {
         Self {
             strict_usb: self.strict_usb,
-            fallback_passphrase: self.fallback_passphrase.as_ref().map(|p| Zeroizing::new(p.to_string())),
-            key_override: self.key_override.as_ref().map(|k| Zeroizing::new(k.to_vec())),
+            fallback_passphrase: self
+                .fallback_passphrase
+                .as_ref()
+                .map(|p| Zeroizing::new(p.to_string())),
+            key_override: self
+                .key_override
+                .as_ref()
+                .map(|k| Zeroizing::new(k.to_vec())),
         }
     }
 }

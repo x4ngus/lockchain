@@ -7,10 +7,10 @@
 use iced::{Element, Task};
 use lockchain_core::provider::ProviderKind;
 
-pub mod targets;
+pub mod health;
 pub mod key;
 pub mod settings;
-pub mod health;
+pub mod targets;
 
 /// Core trait for provider-aware UI panels.
 ///

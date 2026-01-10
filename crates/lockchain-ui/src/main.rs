@@ -1,8 +1,8 @@
 // UI Architecture modules
+mod components;
+mod dispatcher;
 mod panels;
 mod provider;
-mod dispatcher;
-mod components;
 mod shell;
 
 /// Launch the Control Deck application with the AppShell architecture.

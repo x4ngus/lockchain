@@ -2,7 +2,7 @@
 //!
 //! Coordinates async workflow execution, progress tracking, and result handling.
 
-use lockchain_core::workflow::{WorkflowReport, ProvisionOptions, ForgeMode};
+use lockchain_core::workflow::{ForgeMode, ProvisionOptions, WorkflowReport};
 
 pub mod workflow;
 
@@ -17,14 +17,10 @@ pub enum WorkflowCommand {
     },
 
     /// Run self-test on a target.
-    SelfTest {
-        dataset: String,
-    },
+    SelfTest { dataset: String },
 
     /// Recover key from passphrase or hex.
-    RecoverKey {
-        key_material: Vec<u8>,
-    },
+    RecoverKey { key_material: Vec<u8> },
 
     /// Run system diagnostics.
     Diagnostics,

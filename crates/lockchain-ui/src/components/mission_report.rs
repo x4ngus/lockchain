@@ -1,6 +1,9 @@
 //! Mission report component for displaying progress and status.
 
-use iced::{widget::{row, text, container, progress_bar}, Element, Length};
+use iced::{
+    widget::{container, progress_bar, row, text},
+    Element, Length,
+};
 
 /// Mission phase state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -117,22 +120,15 @@ impl MissionReportState {
         let message_text = self.message.as_deref().unwrap_or("Processing...");
 
         let content = row![
-            text(phase_text)
-                .size(16)
-                .color(phase_color),
-            container(progress_bar(0.0..=1.0, self.progress))
-                .width(Length::Fill),
-            text(format!("Events: {}", self.event_count))
-                .size(14),
-            text(message_text)
-                .size(14),
+            text(phase_text).size(16).color(phase_color),
+            container(progress_bar(0.0..=1.0, self.progress)).width(Length::Fill),
+            text(format!("Events: {}", self.event_count)).size(14),
+            text(message_text).size(14),
         ]
         .spacing(16)
         .padding(12);
 
-        container(content)
-            .width(Length::Fill)
-            .into()
+        container(content).width(Length::Fill).into()
     }
 }
 

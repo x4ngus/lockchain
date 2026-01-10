@@ -56,7 +56,7 @@ fn mock_provider_harness_unlocks_mapping_via_service() -> LockchainResult<()> {
     let report = service.unlock(
         "vault",
         UnlockOptions {
-            key_override: Some(vec![0xAA; 32]),
+            key_override: Some(vec![0xAA; 32].into()),
             ..UnlockOptions::default()
         },
     )?;
@@ -195,7 +195,7 @@ fn system_provider_unlock_failure_is_loud_and_actionable() -> LockchainResult<()
         .unlock(
             "vault",
             UnlockOptions {
-                key_override: Some(vec![0xBB; 32]),
+                key_override: Some(vec![0xBB; 32].into()),
                 ..UnlockOptions::default()
             },
         )
