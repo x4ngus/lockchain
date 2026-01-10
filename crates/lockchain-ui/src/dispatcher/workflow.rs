@@ -209,22 +209,20 @@ async fn execute_status(
                 recovery_key: None,
             })
         }
-        ProviderKind::Luks => {
-            Ok(WorkflowReport {
-                title: format!("LUKS Status: {}", target),
-                events: vec![
-                    WorkflowEvent {
-                        level: WorkflowLevel::Info,
-                        message: format!("Target: {}", target),
-                    },
-                    WorkflowEvent {
-                        level: WorkflowLevel::Warn,
-                        message: "LUKS status check not yet fully implemented".to_string(),
-                    },
-                ],
-                recovery_key: None,
-            })
-        }
+        ProviderKind::Luks => Ok(WorkflowReport {
+            title: format!("LUKS Status: {}", target),
+            events: vec![
+                WorkflowEvent {
+                    level: WorkflowLevel::Info,
+                    message: format!("Target: {}", target),
+                },
+                WorkflowEvent {
+                    level: WorkflowLevel::Warn,
+                    message: "LUKS status check not yet fully implemented".to_string(),
+                },
+            ],
+            recovery_key: None,
+        }),
         ProviderKind::Auto => Err("Provider kind must be resolved before status check".to_string()),
     }
 }

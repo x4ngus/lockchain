@@ -110,11 +110,7 @@ impl ProviderPanel for TargetsPanel {
 
     fn view(&self) -> Element<'_, Self::Message> {
         // Provider indicator
-        let provider_label = text(format!(
-            "Provider: {}",
-            self.provider_description()
-        ))
-        .size(14);
+        let provider_label = text(format!("Provider: {}", self.provider_description())).size(14);
 
         // Header with refresh button
         let header = row![
@@ -138,9 +134,12 @@ impl ProviderPanel for TargetsPanel {
                 text("Targets are defined in the Lockchain configuration file.").size(12),
                 text(match self.current_provider {
                     ProviderKind::Zfs => "For ZFS: dataset names (e.g., rpool/encrypted)",
-                    ProviderKind::Luks => "For LUKS: device paths or mapping names (e.g., /dev/nvme0n1p3, vault)",
-                    ProviderKind::Auto => "Target format depends on provider (ZFS datasets or LUKS volumes)",
-                }).size(12),
+                    ProviderKind::Luks =>
+                        "For LUKS: device paths or mapping names (e.g., /dev/nvme0n1p3, vault)",
+                    ProviderKind::Auto =>
+                        "Target format depends on provider (ZFS datasets or LUKS volumes)",
+                })
+                .size(12),
             ]
             .spacing(5)
         } else {
@@ -201,7 +200,11 @@ impl ProviderPanel for TargetsPanel {
             column![
                 text(format!("No {} selected", self.target_noun().to_lowercase())).size(16),
                 Space::with_height(5),
-                text(format!("Select a {} from the list above to view actions.", self.target_noun().to_lowercase())).size(12),
+                text(format!(
+                    "Select a {} from the list above to view actions.",
+                    self.target_noun().to_lowercase()
+                ))
+                .size(12),
             ]
             .spacing(5)
         };
@@ -246,21 +249,21 @@ impl ProviderPanel for TargetsPanel {
             }
             TargetsMessage::RequestStatus(target) => {
                 // Bubble up workflow command
-                Task::done(TargetsMessage::RequestWorkflow(
-                    WorkflowCommand::Status { target },
-                ))
+                Task::done(TargetsMessage::RequestWorkflow(WorkflowCommand::Status {
+                    target,
+                }))
             }
             TargetsMessage::RequestUnlock(target) => {
                 // Bubble up workflow command
-                Task::done(TargetsMessage::RequestWorkflow(
-                    WorkflowCommand::Unlock { target },
-                ))
+                Task::done(TargetsMessage::RequestWorkflow(WorkflowCommand::Unlock {
+                    target,
+                }))
             }
             TargetsMessage::RequestSelfTest(target) => {
                 // Bubble up workflow command
-                Task::done(TargetsMessage::RequestWorkflow(
-                    WorkflowCommand::SelfTest { dataset: target },
-                ))
+                Task::done(TargetsMessage::RequestWorkflow(WorkflowCommand::SelfTest {
+                    dataset: target,
+                }))
             }
             TargetsMessage::RequestWorkflow(_) => {
                 // This message bubbles up to AppShell, no local handling needed
