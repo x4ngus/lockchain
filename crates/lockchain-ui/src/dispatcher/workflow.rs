@@ -34,6 +34,12 @@ pub async fn execute_workflow(
             execute_recover_key(provider_kind, config, zfs_provider, &key_material).await
         }
         WorkflowCommand::Diagnostics => execute_diagnostics(config, zfs_provider).await,
+        WorkflowCommand::Status { target } => {
+            execute_status(provider_kind, config, zfs_provider, luks_provider, &target).await
+        }
+        WorkflowCommand::Unlock { target } => {
+            execute_unlock(provider_kind, config, zfs_provider, luks_provider, &target).await
+        }
     }
 }
 
@@ -145,4 +151,126 @@ async fn execute_diagnostics(
 
     workflow::doctor(&config_guard, zfs_provider.clone())
         .map_err(|e| format!("Diagnostics failed: {}", e))
+}
+
+/// Executes status check for a target (ZFS dataset or LUKS volume).
+async fn execute_status(
+    provider_kind: ProviderKind,
+    _config: Arc<Mutex<LockchainConfig>>,
+    zfs_provider: &SystemZfsProvider,
+    _luks_provider: &SystemLuksProvider,
+    target: &str,
+) -> Result<WorkflowReport, String> {
+    use lockchain_core::workflow::{WorkflowEvent, WorkflowLevel};
+    use lockchain_provider::zfs::ZfsProvider;
+
+    match provider_kind {
+        ProviderKind::Zfs => {
+            let mut events = Vec::new();
+
+            // Get encryption status using describe_datasets
+            match zfs_provider.describe_datasets(&[target.to_string()]) {
+                Ok(descriptors) => {
+                    if let Some(desc) = descriptors.first() {
+                        events.push(WorkflowEvent {
+                            level: WorkflowLevel::Info,
+                            message: format!("Dataset: {}", desc.dataset),
+                        });
+                        events.push(WorkflowEvent {
+                            level: WorkflowLevel::Info,
+                            message: format!("Encryption root: {}", desc.encryption_root),
+                        });
+                        events.push(WorkflowEvent {
+                            level: WorkflowLevel::Info,
+                            message: format!("Key state: {:?}", desc.state),
+                        });
+                        events.push(WorkflowEvent {
+                            level: WorkflowLevel::Success,
+                            message: "Status check completed".to_string(),
+                        });
+                    } else {
+                        events.push(WorkflowEvent {
+                            level: WorkflowLevel::Error,
+                            message: "Dataset not found".to_string(),
+                        });
+                    }
+                }
+                Err(e) => {
+                    events.push(WorkflowEvent {
+                        level: WorkflowLevel::Error,
+                        message: format!("Failed to get status: {}", e),
+                    });
+                }
+            }
+
+            Ok(WorkflowReport {
+                title: format!("Status Check: {}", target),
+                events,
+                recovery_key: None,
+            })
+        }
+        ProviderKind::Luks => {
+            Ok(WorkflowReport {
+                title: format!("LUKS Status: {}", target),
+                events: vec![
+                    WorkflowEvent {
+                        level: WorkflowLevel::Info,
+                        message: format!("Target: {}", target),
+                    },
+                    WorkflowEvent {
+                        level: WorkflowLevel::Warn,
+                        message: "LUKS status check not yet fully implemented".to_string(),
+                    },
+                ],
+                recovery_key: None,
+            })
+        }
+        ProviderKind::Auto => Err("Provider kind must be resolved before status check".to_string()),
+    }
+}
+
+/// Executes unlock workflow for a target (ZFS dataset or LUKS volume).
+async fn execute_unlock(
+    provider_kind: ProviderKind,
+    config: Arc<Mutex<LockchainConfig>>,
+    zfs_provider: &SystemZfsProvider,
+    _luks_provider: &SystemLuksProvider,
+    target: &str,
+) -> Result<WorkflowReport, String> {
+    let config_guard = config
+        .lock()
+        .map_err(|e| format!("Failed to lock config: {}", e))?;
+
+    match provider_kind {
+        ProviderKind::Zfs => {
+            // For ZFS, unlock means loading the key and mounting
+            // Use drill_key workflow which exercises the full unlock path
+            workflow::drill_key(&config_guard, zfs_provider.clone(), target, false)
+                .map_err(|e| format!("Unlock failed: {}", e))
+        }
+        ProviderKind::Luks => {
+            // LUKS unlock - placeholder implementation
+            use lockchain_core::workflow::{WorkflowEvent, WorkflowLevel};
+
+            Ok(WorkflowReport {
+                title: format!("LUKS Unlock: {}", target),
+                events: vec![
+                    WorkflowEvent {
+                        level: WorkflowLevel::Info,
+                        message: format!("Target: {}", target),
+                    },
+                    WorkflowEvent {
+                        level: WorkflowLevel::Warn,
+                        message: "LUKS unlock not yet fully implemented in UI".to_string(),
+                    },
+                    WorkflowEvent {
+                        level: WorkflowLevel::Info,
+                        message: "Use 'lockchain unlock' CLI command for LUKS volumes".to_string(),
+                    },
+                ],
+                recovery_key: None,
+            })
+        }
+        ProviderKind::Auto => Err("Provider kind must be resolved before unlock".to_string()),
+    }
 }

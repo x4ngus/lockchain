@@ -24,6 +24,12 @@ pub enum WorkflowCommand {
 
     /// Run system diagnostics.
     Diagnostics,
+
+    /// Check status of a target (ZFS dataset or LUKS volume).
+    Status { target: String },
+
+    /// Unlock a target (ZFS dataset or LUKS volume).
+    Unlock { target: String },
 }
 
 /// State for tracking command execution.

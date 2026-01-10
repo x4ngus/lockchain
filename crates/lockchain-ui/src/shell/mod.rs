@@ -147,10 +147,15 @@ impl AppShell {
             }
 
             // Panel messages (delegate to panels)
-            AppShellMessage::TargetsMessage(msg) => self
-                .targets_panel
-                .update(msg)
-                .map(AppShellMessage::TargetsMessage),
+            AppShellMessage::TargetsMessage(msg) => {
+                // Check if this is a workflow request that needs to bubble up
+                if let crate::panels::targets::TargetsMessage::RequestWorkflow(command) = msg {
+                    return Task::done(AppShellMessage::ExecuteWorkflow(command));
+                }
+                self.targets_panel
+                    .update(msg)
+                    .map(AppShellMessage::TargetsMessage)
+            }
             AppShellMessage::KeyMessage(msg) => {
                 // Check if this is a workflow request that needs to bubble up
                 if let crate::panels::key::KeyMessage::RequestWorkflow(command) = msg {

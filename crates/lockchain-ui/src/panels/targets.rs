@@ -4,6 +4,7 @@
 //! - ZFS dataset selection and management
 //! - LUKS mapping discovery and selection
 //! - Target status display
+//! - Common actions: Status / Unlock / Self-Test
 
 use iced::{
     widget::{button, column, container, row, scrollable, text, Space},
@@ -12,6 +13,7 @@ use iced::{
 use lockchain_core::provider::ProviderKind;
 
 use super::ProviderPanel;
+use crate::dispatcher::WorkflowCommand;
 
 /// State for the Targets panel.
 pub struct TargetsPanel {
@@ -36,6 +38,18 @@ pub enum TargetsMessage {
 
     /// Target list loaded from config.
     TargetsLoaded(Vec<String>),
+
+    /// User requested status check for a target.
+    RequestStatus(String),
+
+    /// User requested to unlock a target.
+    RequestUnlock(String),
+
+    /// User requested self-test for a target.
+    RequestSelfTest(String),
+
+    /// Bubble workflow command to AppShell.
+    RequestWorkflow(WorkflowCommand),
 }
 
 impl TargetsPanel {
@@ -58,6 +72,33 @@ impl TargetsPanel {
             self.selected_target = Some(self.configured_targets[0].clone());
         }
     }
+
+    /// Returns provider-specific noun for targets.
+    fn target_noun(&self) -> &str {
+        match self.current_provider {
+            ProviderKind::Zfs => "Dataset",
+            ProviderKind::Luks => "Volume",
+            ProviderKind::Auto => "Target",
+        }
+    }
+
+    /// Returns provider-specific plural noun for targets.
+    fn target_noun_plural(&self) -> &str {
+        match self.current_provider {
+            ProviderKind::Zfs => "Datasets",
+            ProviderKind::Luks => "Volumes",
+            ProviderKind::Auto => "Targets",
+        }
+    }
+
+    /// Returns provider-specific description.
+    fn provider_description(&self) -> &str {
+        match self.current_provider {
+            ProviderKind::Zfs => "ZFS (Datasets)",
+            ProviderKind::Luks => "LUKS (Crypttab/Mapper)",
+            ProviderKind::Auto => "Auto",
+        }
+    }
 }
 
 impl ProviderPanel for TargetsPanel {
@@ -71,17 +112,13 @@ impl ProviderPanel for TargetsPanel {
         // Provider indicator
         let provider_label = text(format!(
             "Provider: {}",
-            match self.current_provider {
-                ProviderKind::Zfs => "ZFS (Datasets)",
-                ProviderKind::Luks => "LUKS (Mappings)",
-                ProviderKind::Auto => "Auto",
-            }
+            self.provider_description()
         ))
         .size(14);
 
         // Header with refresh button
         let header = row![
-            text("Configured Targets").size(20),
+            text(format!("Configured {}", self.target_noun_plural())).size(20),
             Space::with_width(Length::Fill),
             button(text("Refresh").size(14))
                 .on_press(TargetsMessage::RefreshTargets)
@@ -94,12 +131,16 @@ impl ProviderPanel for TargetsPanel {
         let target_list = if self.loading {
             column![text("Loading targets...").size(16)].spacing(10)
         } else if self.configured_targets.is_empty() {
+            let noun_lower = self.target_noun_plural().to_lowercase();
             column![
-                text("No targets configured").size(16),
+                text(format!("No {} configured", noun_lower)).size(16),
                 Space::with_height(10),
                 text("Targets are defined in the Lockchain configuration file.").size(12),
-                text("For ZFS, these are dataset names (e.g., rpool/encrypted).").size(12),
-                text("For LUKS, these are device paths or mapping names.").size(12),
+                text(match self.current_provider {
+                    ProviderKind::Zfs => "For ZFS: dataset names (e.g., rpool/encrypted)",
+                    ProviderKind::Luks => "For LUKS: device paths or mapping names (e.g., /dev/nvme0n1p3, vault)",
+                    ProviderKind::Auto => "Target format depends on provider (ZFS datasets or LUKS volumes)",
+                }).size(12),
             ]
             .spacing(5)
         } else {
@@ -107,7 +148,7 @@ impl ProviderPanel for TargetsPanel {
             for target in &self.configured_targets {
                 let is_selected = self.selected_target.as_ref() == Some(target);
                 let label = if is_selected {
-                    format!("▶ {} [SELECTED]", target)
+                    format!("▶ {}", target)
                 } else {
                     format!("  {}", target)
                 };
@@ -122,19 +163,47 @@ impl ProviderPanel for TargetsPanel {
             items
         };
 
-        // Target info section
-        let info_section = if let Some(selected) = &self.selected_target {
+        // Action buttons section (only show if target selected)
+        let actions_section = if let Some(selected) = &self.selected_target {
             column![
-                text("Selected Target").size(16),
+                text(format!("Selected {}", self.target_noun())).size(16),
                 Space::with_height(5),
                 text(selected).size(20),
+                Space::with_height(15),
+                text("Actions").size(18),
                 Space::with_height(10),
-                text("Use the Key panel to forge keys or perform recovery on this target.")
-                    .size(12),
+                // Action buttons row
+                row![
+                    button(text("Status").size(14))
+                        .on_press(TargetsMessage::RequestStatus(selected.clone()))
+                        .padding([8, 16]),
+                    Space::with_width(10),
+                    button(text("Unlock").size(14))
+                        .on_press(TargetsMessage::RequestUnlock(selected.clone()))
+                        .padding([8, 16]),
+                    Space::with_width(10),
+                    button(text("Self-Test").size(14))
+                        .on_press(TargetsMessage::RequestSelfTest(selected.clone()))
+                        .padding([8, 16]),
+                ]
+                .align_y(Alignment::Center)
+                .spacing(0),
+                Space::with_height(15),
+                text(match self.current_provider {
+                    ProviderKind::Zfs => "• Status: Check ZFS encryption properties\n• Unlock: Load key and mount dataset\n• Self-Test: Verify encryption integrity",
+                    ProviderKind::Luks => "• Status: Check LUKS volume status\n• Unlock: Open encrypted volume\n• Self-Test: Verify volume integrity",
+                    ProviderKind::Auto => "• Status: Check target status\n• Unlock: Unlock target\n• Self-Test: Run integrity test",
+                })
+                .size(12),
             ]
             .spacing(5)
         } else {
-            column![text("No target selected").size(16)].spacing(5)
+            column![
+                text(format!("No {} selected", self.target_noun().to_lowercase())).size(16),
+                Space::with_height(5),
+                text(format!("Select a {} from the list above to view actions.", self.target_noun().to_lowercase())).size(12),
+            ]
+            .spacing(5)
         };
 
         let content = column![
@@ -144,9 +213,9 @@ impl ProviderPanel for TargetsPanel {
             Space::with_height(20),
             header,
             Space::with_height(15),
-            scrollable(target_list).height(Length::Fixed(250.0)),
+            scrollable(target_list).height(Length::Fixed(200.0)),
             Space::with_height(20),
-            info_section,
+            actions_section,
         ]
         .spacing(5)
         .padding(20);
@@ -173,6 +242,28 @@ impl ProviderPanel for TargetsPanel {
             }
             TargetsMessage::TargetsLoaded(targets) => {
                 self.load_targets_from_config(targets);
+                Task::none()
+            }
+            TargetsMessage::RequestStatus(target) => {
+                // Bubble up workflow command
+                Task::done(TargetsMessage::RequestWorkflow(
+                    WorkflowCommand::Status { target },
+                ))
+            }
+            TargetsMessage::RequestUnlock(target) => {
+                // Bubble up workflow command
+                Task::done(TargetsMessage::RequestWorkflow(
+                    WorkflowCommand::Unlock { target },
+                ))
+            }
+            TargetsMessage::RequestSelfTest(target) => {
+                // Bubble up workflow command
+                Task::done(TargetsMessage::RequestWorkflow(
+                    WorkflowCommand::SelfTest { dataset: target },
+                ))
+            }
+            TargetsMessage::RequestWorkflow(_) => {
+                // This message bubbles up to AppShell, no local handling needed
                 Task::none()
             }
         }

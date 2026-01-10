@@ -2231,6 +2231,7 @@ dependencies = [
  "iced_aw",
  "lockchain-core",
  "lockchain-luks",
+ "lockchain-provider",
  "lockchain-zfs",
  "log",
  "qrcodegen",

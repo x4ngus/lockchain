@@ -7,6 +7,7 @@ edition = "2021"
 iced = { version = "0.13", features = ["advanced","tokio","svg","canvas"] }
 iced_aw = { version = "0.12", default-features = false, features = ["spinner"] }
 lockchain-core = { path = "../lockchain-core" }
+lockchain-provider = { path = "../lockchain-provider" }
 lockchain-luks = { path = "../lockchain-luks" }
 lockchain-zfs = { path = "../lockchain-zfs" }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
