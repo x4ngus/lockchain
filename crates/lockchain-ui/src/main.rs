@@ -1,6 +1,11 @@
-mod app;
+// UI Architecture modules
+mod panels;
+mod provider;
+mod dispatcher;
+mod components;
+mod shell;
 
-/// Launch the Control Deck application with the configured theme and render profiles.
+/// Launch the Control Deck application with the AppShell architecture.
 pub fn main() -> iced::Result {
-    app::run()
+    shell::run()
 }

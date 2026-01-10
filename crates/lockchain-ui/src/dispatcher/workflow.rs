@@ -1,0 +1,143 @@
+//! Workflow execution helpers.
+//!
+//! Async functions for executing workflows against providers.
+
+use std::sync::{Arc, Mutex};
+use std::path::PathBuf;
+
+use lockchain_core::config::LockchainConfig;
+use lockchain_core::workflow::{self, WorkflowReport, ProvisionOptions, ForgeMode, RecoveryInput};
+use lockchain_core::provider::ProviderKind;
+use lockchain_zfs::SystemZfsProvider;
+use lockchain_luks::SystemLuksProvider;
+
+use super::WorkflowCommand;
+
+/// Executes a workflow command against the appropriate provider.
+pub async fn execute_workflow(
+    command: WorkflowCommand,
+    provider_kind: ProviderKind,
+    config: Arc<Mutex<LockchainConfig>>,
+    zfs_provider: &SystemZfsProvider,
+    luks_provider: &SystemLuksProvider,
+) -> Result<WorkflowReport, String> {
+    match command {
+        WorkflowCommand::ForgeKey { dataset, mode, options } => {
+            execute_forge_key(provider_kind, config, zfs_provider, &dataset, mode, options).await
+        }
+        WorkflowCommand::SelfTest { dataset } => {
+            execute_self_test(provider_kind, config, zfs_provider, luks_provider, &dataset).await
+        }
+        WorkflowCommand::RecoverKey { key_material } => {
+            execute_recover_key(provider_kind, config, zfs_provider, &key_material).await
+        }
+        WorkflowCommand::Diagnostics => {
+            execute_diagnostics(config, zfs_provider).await
+        }
+    }
+}
+
+/// Executes a key forging workflow.
+async fn execute_forge_key(
+    provider_kind: ProviderKind,
+    config: Arc<Mutex<LockchainConfig>>,
+    zfs_provider: &SystemZfsProvider,
+    dataset: &str,
+    mode: ForgeMode,
+    options: ProvisionOptions,
+) -> Result<WorkflowReport, String> {
+    match provider_kind {
+        ProviderKind::Zfs => {
+            let mut config_guard = config.lock()
+                .map_err(|e| format!("Failed to lock config: {}", e))?;
+
+            workflow::forge_key(&mut config_guard, zfs_provider, dataset, mode, options)
+                .map_err(|e| format!("Forge key failed: {}", e))
+        }
+        ProviderKind::Luks => {
+            Err("Key forging not supported for LUKS in UI. Use lockchain-cli init.".to_string())
+        }
+        ProviderKind::Auto => {
+            Err("Provider kind must be resolved before forging".to_string())
+        }
+    }
+}
+
+/// Executes a self-test workflow.
+async fn execute_self_test(
+    provider_kind: ProviderKind,
+    config: Arc<Mutex<LockchainConfig>>,
+    zfs_provider: &SystemZfsProvider,
+    _luks_provider: &SystemLuksProvider,
+    dataset: &str,
+) -> Result<WorkflowReport, String> {
+    let config_guard = config.lock()
+        .map_err(|e| format!("Failed to lock config: {}", e))?;
+
+    match provider_kind {
+        ProviderKind::Zfs => {
+            // self_test requires: config, provider (cloned), dataset, skip_unlock (bool)
+            workflow::self_test(&config_guard, zfs_provider.clone(), dataset, false)
+                .map_err(|e| format!("Self-test failed: {}", e))
+        }
+        ProviderKind::Luks => {
+            // self_test_luks requires: config, provider_builder, target, skip_unlock
+            // For now, return placeholder error - full implementation needed
+            Err("LUKS self-test not yet implemented in new architecture".to_string())
+        }
+        ProviderKind::Auto => {
+            Err("Provider kind must be resolved before self-test".to_string())
+        }
+    }
+}
+
+/// Executes a key recovery workflow.
+async fn execute_recover_key(
+    provider_kind: ProviderKind,
+    config: Arc<Mutex<LockchainConfig>>,
+    zfs_provider: &SystemZfsProvider,
+    key_material: &[u8],
+) -> Result<WorkflowReport, String> {
+    let config_guard = config.lock()
+        .map_err(|e| format!("Failed to lock config: {}", e))?;
+
+    // Get first dataset from config
+    let dataset = config_guard.policy.targets.first()
+        .ok_or_else(|| "No targets configured".to_string())?;
+
+    // Determine recovery input type (hex vs passphrase)
+    let recovery_input = if key_material.len() == 64 {
+        // Assume hex-encoded key (as string)
+        let hex_str = std::str::from_utf8(key_material)
+            .map_err(|e| format!("Invalid UTF-8 in hex key: {}", e))?;
+        RecoveryInput::Hex(hex_str)
+    } else {
+        // Passphrase as raw bytes
+        RecoveryInput::Passphrase(key_material)
+    };
+
+    // Use a temp output path for recovery
+    let output_path = PathBuf::from("/tmp/lockchain_recovery_key");
+
+    match provider_kind {
+        ProviderKind::Zfs | ProviderKind::Luks => {
+            workflow::recover_key(&config_guard, zfs_provider.clone(), dataset, recovery_input, &output_path)
+                .map_err(|e| format!("Recovery failed: {}", e))
+        }
+        ProviderKind::Auto => {
+            Err("Provider kind must be resolved before recovery".to_string())
+        }
+    }
+}
+
+/// Executes system diagnostics.
+async fn execute_diagnostics(
+    config: Arc<Mutex<LockchainConfig>>,
+    zfs_provider: &SystemZfsProvider,
+) -> Result<WorkflowReport, String> {
+    let config_guard = config.lock()
+        .map_err(|e| format!("Failed to lock config: {}", e))?;
+
+    workflow::doctor(&config_guard, zfs_provider.clone())
+        .map_err(|e| format!("Diagnostics failed: {}", e))
+}
