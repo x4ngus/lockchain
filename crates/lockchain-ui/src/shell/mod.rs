@@ -54,7 +54,7 @@ pub enum AppShellMessage {
     TargetsMessage(crate::panels::targets::TargetsMessage),
     KeyMessage(crate::panels::key::KeyMessage),
     SettingsMessage(crate::panels::settings::SettingsMessage),
-    HealthMessage(crate::panels::health::HealthMessage),
+    HealthMessage(Box<crate::panels::health::HealthMessage>),
 
     /// Terminal messages.
     TerminalInputChanged(String),
@@ -178,11 +178,11 @@ impl AppShell {
                 .map(AppShellMessage::SettingsMessage),
             AppShellMessage::HealthMessage(msg) => {
                 // Check if this is a workflow request that needs to bubble up
-                if let crate::panels::health::HealthMessage::RequestWorkflow(command) = msg {
+                if let crate::panels::health::HealthMessage::RequestWorkflow(command) = *msg {
                     return Task::done(AppShellMessage::ExecuteWorkflow(command));
                 }
                 // Check if this is a ShowTerminal request
-                if let crate::panels::health::HealthMessage::ShowTerminal = msg {
+                if let crate::panels::health::HealthMessage::ShowTerminal = *msg {
                     // Switch to terminal view (if we had panel tabs, we'd switch to Terminal)
                     // For now, just log to terminal
                     self.terminal.push_line(
@@ -192,8 +192,8 @@ impl AppShell {
                     return Task::none();
                 }
                 self.health_panel
-                    .update(msg)
-                    .map(AppShellMessage::HealthMessage)
+                    .update(*msg)
+                    .map(|m| AppShellMessage::HealthMessage(Box::new(m)))
             }
 
             // Terminal messages
@@ -312,9 +312,9 @@ impl AppShell {
                 if let Ok(config) = self.provider_ctx.config_arc().lock() {
                     self.health_panel
                         .update(crate::panels::health::HealthMessage::RefreshKeyStatus(
-                            (*config).clone(),
+                            Box::new((*config).clone()),
                         ))
-                        .map(AppShellMessage::HealthMessage)
+                        .map(|m| AppShellMessage::HealthMessage(Box::new(m)))
                 } else {
                     Task::none()
                 }

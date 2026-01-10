@@ -175,9 +175,6 @@ pub enum KeyStatusMessage {
 
     /// Inspect a file path (open in editor/viewer).
     InspectPath(String),
-
-    /// Periodic auto-refresh timer tick.
-    AutoRefresh,
 }
 
 impl KeyStatusState {
@@ -189,11 +186,6 @@ impl KeyStatusState {
     /// Update the status with fresh data.
     pub fn update(&mut self, status: KeyStatus) {
         self.status = Some(status);
-    }
-
-    /// Get the current status.
-    pub fn status(&self) -> Option<&KeyStatus> {
-        self.status.as_ref()
     }
 
     /// Render the key status UI.

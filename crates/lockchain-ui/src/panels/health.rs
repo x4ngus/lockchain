@@ -57,7 +57,7 @@ pub enum HealthMessage {
     RequestWorkflow(WorkflowCommand),
 
     /// Refresh key status from config.
-    RefreshKeyStatus(LockchainConfig),
+    RefreshKeyStatus(Box<LockchainConfig>),
 
     /// Jump to terminal to view logs.
     ShowTerminal,
@@ -196,7 +196,7 @@ impl ProviderPanel for HealthPanel {
             }
             HealthMessage::KeyStatus(msg) => {
                 match msg {
-                    KeyStatusMessage::Refresh | KeyStatusMessage::AutoRefresh => {
+                    KeyStatusMessage::Refresh => {
                         // Trigger refresh - request config from AppShell
                         // For now, do nothing - AppShell should periodically refresh
                         Task::none()

@@ -59,7 +59,7 @@ fn render_active_panel(shell: &AppShell) -> Element<'_, AppShellMessage> {
         PanelKind::Health => shell
             .health_panel
             .view()
-            .map(AppShellMessage::HealthMessage),
+            .map(|m| AppShellMessage::HealthMessage(Box::new(m))),
     }
 }
 
