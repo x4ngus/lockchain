@@ -4,14 +4,17 @@
 //! - Self-test execution
 //! - System diagnostics (doctor)
 //! - Status monitoring
+//! - Key/USB status visibility
 
 use iced::{
     widget::{button, column, container, text, text_input, Space},
     Element, Length, Task,
 };
+use lockchain_core::config::LockchainConfig;
 use lockchain_core::provider::ProviderKind;
 
 use super::ProviderPanel;
+use crate::components::{KeyStatus, KeyStatusMessage, KeyStatusState};
 use crate::dispatcher::WorkflowCommand;
 
 /// Per-provider state snapshot.
@@ -30,6 +33,9 @@ pub struct HealthPanel {
 
     // Dataset for self-test (active state)
     dataset_input: String,
+
+    // Key/USB status component
+    key_status: KeyStatusState,
 }
 
 /// Messages for the Health panel.
@@ -44,8 +50,17 @@ pub enum HealthMessage {
     /// User clicked "Run Diagnostics" button.
     ExecuteDiagnostics,
 
+    /// Key status message (from component).
+    KeyStatus(KeyStatusMessage),
+
     /// Request workflow execution (bubbled up to AppShell).
     RequestWorkflow(WorkflowCommand),
+
+    /// Refresh key status from config.
+    RefreshKeyStatus(LockchainConfig),
+
+    /// Jump to terminal to view logs.
+    ShowTerminal,
 }
 
 impl HealthPanel {
@@ -56,7 +71,14 @@ impl HealthPanel {
             zfs_state: ProviderState::default(),
             luks_state: ProviderState::default(),
             dataset_input: String::new(),
+            key_status: KeyStatusState::new(),
         }
+    }
+
+    /// Initialize panel with config data.
+    pub fn init_with_config(&mut self, config: &LockchainConfig) {
+        let status = KeyStatus::check(config, self.current_provider);
+        self.key_status.update(status);
     }
 
     /// Saves current state to provider snapshot.
@@ -103,6 +125,12 @@ impl ProviderPanel for HealthPanel {
         ))
         .size(14);
 
+        // Key/USB status section (map messages)
+        let key_status_view = self
+            .key_status
+            .view()
+            .map(HealthMessage::KeyStatus);
+
         // Self-test section
         let selftest_title = text("Self-Test").size(20);
         let dataset_label = text("Dataset:").size(16);
@@ -125,6 +153,9 @@ impl ProviderPanel for HealthPanel {
             text("HEALTH").size(32),
             Space::with_height(10),
             provider_label,
+            Space::with_height(20),
+            // Key/USB Status section
+            key_status_view,
             Space::with_height(30),
             // Self-test section
             selftest_title,
@@ -165,6 +196,53 @@ impl ProviderPanel for HealthPanel {
             HealthMessage::ExecuteDiagnostics => {
                 let command = WorkflowCommand::Diagnostics;
                 Task::done(HealthMessage::RequestWorkflow(command))
+            }
+            HealthMessage::KeyStatus(msg) => {
+                match msg {
+                    KeyStatusMessage::Refresh | KeyStatusMessage::AutoRefresh => {
+                        // Trigger refresh - request config from AppShell
+                        // For now, do nothing - AppShell should periodically refresh
+                        Task::none()
+                    }
+                    KeyStatusMessage::ShowLogs => {
+                        // Signal to switch to terminal view (handled by AppShell)
+                        Task::done(HealthMessage::ShowTerminal)
+                    }
+                    KeyStatusMessage::RecoverUsb => {
+                        // Launch USB recovery workflow
+                        let command = WorkflowCommand::RecoverUsb;
+                        Task::done(HealthMessage::RequestWorkflow(command))
+                    }
+                    KeyStatusMessage::InspectPath(path) => {
+                        // Open file for inspection - use system command
+                        #[cfg(target_os = "macos")]
+                        let _ = std::process::Command::new("open")
+                            .arg("-t") // Text editor
+                            .arg(&path)
+                            .spawn();
+
+                        #[cfg(target_os = "linux")]
+                        let _ = std::process::Command::new("xdg-open")
+                            .arg(&path)
+                            .spawn();
+
+                        #[cfg(target_os = "windows")]
+                        let _ = std::process::Command::new("notepad")
+                            .arg(&path)
+                            .spawn();
+
+                        Task::none()
+                    }
+                }
+            }
+            HealthMessage::RefreshKeyStatus(config) => {
+                let status = KeyStatus::check(&config, self.current_provider);
+                self.key_status.update(status);
+                Task::none()
+            }
+            HealthMessage::ShowTerminal => {
+                // Handled by AppShell, do nothing here
+                Task::none()
             }
             HealthMessage::RequestWorkflow(_) => {
                 // This message is handled by AppShell, do nothing here

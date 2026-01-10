@@ -22,6 +22,9 @@ pub enum WorkflowCommand {
     /// Recover key from passphrase or hex.
     RecoverKey { key_material: Vec<u8> },
 
+    /// Recover USB key using recovery code.
+    RecoverUsb,
+
     /// Run system diagnostics.
     Diagnostics,
 

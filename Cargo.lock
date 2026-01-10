@@ -2227,6 +2227,7 @@ name = "lockchain-ui"
 version = "0.2.1"
 dependencies = [
  "chrono",
+ "hex",
  "iced",
  "iced_aw",
  "lockchain-core",
@@ -2236,6 +2237,7 @@ dependencies = [
  "log",
  "qrcodegen",
  "regex",
+ "sha2",
  "tokio",
 ]
 

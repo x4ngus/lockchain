@@ -33,6 +33,9 @@ pub async fn execute_workflow(
         WorkflowCommand::RecoverKey { key_material } => {
             execute_recover_key(provider_kind, config, zfs_provider, &key_material).await
         }
+        WorkflowCommand::RecoverUsb => {
+            execute_recover_usb().await
+        }
         WorkflowCommand::Diagnostics => execute_diagnostics(config, zfs_provider).await,
         WorkflowCommand::Status { target } => {
             execute_status(provider_kind, config, zfs_provider, luks_provider, &target).await
@@ -271,4 +274,67 @@ async fn execute_unlock(
         }
         ProviderKind::Auto => Err("Provider kind must be resolved before unlock".to_string()),
     }
+}
+
+/// Executes USB key recovery workflow using recovery code.
+///
+/// This workflow guides the user through recovering a lost USB key using the
+/// recovery code that was generated during the initial key forging process.
+async fn execute_recover_usb() -> Result<WorkflowReport, String> {
+    use lockchain_core::workflow::{WorkflowEvent, WorkflowLevel};
+
+    // This is a placeholder implementation that provides instructions.
+    // The actual recovery requires user input (recovery hex code) which should
+    // be collected via UI and passed to the RecoverKey workflow.
+
+    Ok(WorkflowReport {
+        title: "USB Key Recovery".to_string(),
+        events: vec![
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "USB Key Recovery Process".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "To recover your USB key, you will need:".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "1. The 64-character recovery hex code from your initial key forge".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "2. A USB device formatted and ready to receive the key".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Warn,
+                message: "Recovery code should have been securely stored during initial setup!".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "Navigate to the Key panel → Recovery tab to enter your recovery code".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "The recovery workflow will:".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "  - Decode your recovery hex code".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "  - Write the key to the USB device".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Info,
+                message: "  - Stage the key in /run/lockchain for unlock".to_string(),
+            },
+            WorkflowEvent {
+                level: WorkflowLevel::Success,
+                message: "Use the Key panel's Recovery mode to proceed with recovery".to_string(),
+            },
+        ],
+        recovery_key: None,
+    })
 }

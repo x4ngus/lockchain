@@ -65,6 +65,9 @@ pub enum AppShellMessage {
     /// Workflow execution.
     ExecuteWorkflow(WorkflowCommand),
     WorkflowFinished(WorkflowResult),
+
+    /// Periodic key status refresh timer.
+    RefreshKeyStatus,
 }
 
 impl AppShell {
@@ -88,12 +91,18 @@ impl AppShell {
         let mut settings_panel = SettingsPanel::new(current_provider);
         settings_panel.set_config_info(config_path_str, targets.len());
 
+        // Set up health panel with initial key status
+        let mut health_panel = HealthPanel::new(current_provider);
+        if let Ok(cfg) = provider_ctx.config_arc().lock() {
+            health_panel.init_with_config(&cfg);
+        }
+
         Ok(Self {
             active_panel: PanelKind::Targets,
             targets_panel,
             key_panel: KeyPanel::new(current_provider),
             settings_panel,
-            health_panel: HealthPanel::new(current_provider),
+            health_panel,
             terminal: TerminalState::new(),
             header: HeaderState::new(current_provider),
             mission_report: MissionReportState::new(),
@@ -171,6 +180,16 @@ impl AppShell {
                 // Check if this is a workflow request that needs to bubble up
                 if let crate::panels::health::HealthMessage::RequestWorkflow(command) = msg {
                     return Task::done(AppShellMessage::ExecuteWorkflow(command));
+                }
+                // Check if this is a ShowTerminal request
+                if let crate::panels::health::HealthMessage::ShowTerminal = msg {
+                    // Switch to terminal view (if we had panel tabs, we'd switch to Terminal)
+                    // For now, just log to terminal
+                    self.terminal.push_line(
+                        crate::components::TerminalLevel::Info,
+                        "View logs above for key status diagnostics".to_string(),
+                    );
+                    return Task::none();
                 }
                 self.health_panel
                     .update(msg)
@@ -287,12 +306,34 @@ impl AppShell {
 
                 Task::none()
             }
+
+            AppShellMessage::RefreshKeyStatus => {
+                // Refresh key status in HealthPanel
+                if let Ok(config) = self.provider_ctx.config_arc().lock() {
+                    self.health_panel
+                        .update(crate::panels::health::HealthMessage::RefreshKeyStatus(
+                            (*config).clone(),
+                        ))
+                        .map(AppShellMessage::HealthMessage)
+                } else {
+                    Task::none()
+                }
+            }
         }
     }
 
     /// Renders the AppShell view (delegated to view module).
     pub fn view(&self) -> Element<'_, AppShellMessage> {
         view::render(self)
+    }
+
+    /// Subscription for periodic events (auto-refresh).
+    pub fn subscription(&self) -> iced::Subscription<AppShellMessage> {
+        use iced::time;
+        use std::time::Duration;
+
+        // Auto-refresh key status every 5 seconds
+        time::every(Duration::from_secs(5)).map(|_| AppShellMessage::RefreshKeyStatus)
     }
 
     /// Initializes the AppShell (called by Iced on startup).
@@ -320,5 +361,6 @@ impl AppShell {
 pub fn run() -> iced::Result {
     iced::application("Lockchain Control Deck", AppShell::update, AppShell::view)
         .theme(AppShell::theme)
+        .subscription(AppShell::subscription)
         .run_with(AppShell::init)
 }
