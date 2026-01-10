@@ -33,9 +33,7 @@ pub async fn execute_workflow(
         WorkflowCommand::RecoverKey { key_material } => {
             execute_recover_key(provider_kind, config, zfs_provider, &key_material).await
         }
-        WorkflowCommand::RecoverUsb => {
-            execute_recover_usb().await
-        }
+        WorkflowCommand::RecoverUsb => execute_recover_usb().await,
         WorkflowCommand::Diagnostics => execute_diagnostics(config, zfs_provider).await,
         WorkflowCommand::Status { target } => {
             execute_status(provider_kind, config, zfs_provider, luks_provider, &target).await
@@ -300,7 +298,8 @@ async fn execute_recover_usb() -> Result<WorkflowReport, String> {
             },
             WorkflowEvent {
                 level: WorkflowLevel::Info,
-                message: "1. The 64-character recovery hex code from your initial key forge".to_string(),
+                message: "1. The 64-character recovery hex code from your initial key forge"
+                    .to_string(),
             },
             WorkflowEvent {
                 level: WorkflowLevel::Info,
@@ -308,11 +307,13 @@ async fn execute_recover_usb() -> Result<WorkflowReport, String> {
             },
             WorkflowEvent {
                 level: WorkflowLevel::Warn,
-                message: "Recovery code should have been securely stored during initial setup!".to_string(),
+                message: "Recovery code should have been securely stored during initial setup!"
+                    .to_string(),
             },
             WorkflowEvent {
                 level: WorkflowLevel::Info,
-                message: "Navigate to the Key panel → Recovery tab to enter your recovery code".to_string(),
+                message: "Navigate to the Key panel → Recovery tab to enter your recovery code"
+                    .to_string(),
             },
             WorkflowEvent {
                 level: WorkflowLevel::Info,

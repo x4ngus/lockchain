@@ -126,10 +126,7 @@ impl ProviderPanel for HealthPanel {
         .size(14);
 
         // Key/USB status section (map messages)
-        let key_status_view = self
-            .key_status
-            .view()
-            .map(HealthMessage::KeyStatus);
+        let key_status_view = self.key_status.view().map(HealthMessage::KeyStatus);
 
         // Self-test section
         let selftest_title = text("Self-Test").size(20);
@@ -222,14 +219,10 @@ impl ProviderPanel for HealthPanel {
                             .spawn();
 
                         #[cfg(target_os = "linux")]
-                        let _ = std::process::Command::new("xdg-open")
-                            .arg(&path)
-                            .spawn();
+                        let _ = std::process::Command::new("xdg-open").arg(&path).spawn();
 
                         #[cfg(target_os = "windows")]
-                        let _ = std::process::Command::new("notepad")
-                            .arg(&path)
-                            .spawn();
+                        let _ = std::process::Command::new("notepad").arg(&path).spawn();
 
                         Task::none()
                     }

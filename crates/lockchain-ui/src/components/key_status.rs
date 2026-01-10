@@ -199,15 +199,10 @@ impl KeyStatusState {
     /// Render the key status UI.
     pub fn view(&self) -> Element<'_, KeyStatusMessage> {
         let Some(status) = &self.status else {
-            return container(text("Loading key status..."))
-                .padding(20)
-                .into();
+            return container(text("Loading key status...")).padding(20).into();
         };
 
-        let mut content = Column::new()
-            .spacing(15)
-            .padding(20)
-            .width(Length::Fill);
+        let mut content = Column::new().spacing(15).padding(20).width(Length::Fill);
 
         // USB Status Section
         content = content.push(text("USB Device Status").size(18));
@@ -248,9 +243,7 @@ impl KeyStatusState {
             } else {
                 for mapping in &status.luks_mappings {
                     let mapping_path_btn = button(text(&mapping.key_file_path).size(11))
-                        .on_press(KeyStatusMessage::InspectPath(
-                            mapping.key_file_path.clone(),
-                        ))
+                        .on_press(KeyStatusMessage::InspectPath(mapping.key_file_path.clone()))
                         .style(|_theme, _status| button::Style {
                             background: None,
                             text_color: iced::Color::from_rgb(0.3, 0.5, 0.8),
@@ -277,10 +270,8 @@ impl KeyStatusState {
         // Overall Status
         if status.ready_for_unlock() {
             content = content.push(
-                container(text("✓ Ready for unlock").style(|_theme| {
-                    text::Style {
-                        color: Some(iced::Color::from_rgb(0.0, 0.8, 0.0)),
-                    }
+                container(text("✓ Ready for unlock").style(|_theme| text::Style {
+                    color: Some(iced::Color::from_rgb(0.0, 0.8, 0.0)),
                 }))
                 .padding(10)
                 .style(|_theme| container::Style {
@@ -374,9 +365,9 @@ fn render_usb_status(status: &UsbStatus) -> Element<'static, KeyStatusMessage> {
     };
 
     row![
-        text(icon).size(20).style(move |_theme| text::Style {
-            color: Some(color),
-        }),
+        text(icon)
+            .size(20)
+            .style(move |_theme| text::Style { color: Some(color) }),
         text(message)
     ]
     .spacing(10)
@@ -392,9 +383,10 @@ fn render_staging_icon(status: StagingStatus) -> Element<'static, KeyStatusMessa
         StagingStatus::Unknown => ("?", iced::Color::from_rgb(0.6, 0.6, 0.6)),
     };
 
-    text(icon).size(16).style(move |_theme| text::Style {
-        color: Some(color),
-    }).into()
+    text(icon)
+        .size(16)
+        .style(move |_theme| text::Style { color: Some(color) })
+        .into()
 }
 
 /// Check USB device status against configured checksum.
