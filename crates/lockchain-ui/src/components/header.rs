@@ -60,18 +60,16 @@ impl HeaderState {
         };
 
         let mode_indicator = container(
-            text(mode_text)
-                .size(16)
-                .color(iced::color!(0x00ff00)), // Bright green
+            text(mode_text).size(16).color(iced::color!(0x00ff00)), // Bright green
         )
         .padding([8, 16])
         .style(|_theme: &iced::Theme| container::Style {
             background: Some(iced::Background::Color(iced::color!(0x1a1a1a))),
             border: iced::Border {
                 color: match self.current_provider {
-                    ProviderKind::Zfs => iced::color!(0x00aaff),   // Blue for ZFS
-                    ProviderKind::Luks => iced::color!(0xff6600),  // Orange for LUKS
-                    ProviderKind::Auto => iced::color!(0x888888),  // Gray for Auto
+                    ProviderKind::Zfs => iced::color!(0x00aaff), // Blue for ZFS
+                    ProviderKind::Luks => iced::color!(0xff6600), // Orange for LUKS
+                    ProviderKind::Auto => iced::color!(0x888888), // Gray for Auto
                 },
                 width: 2.0,
                 radius: 4.0.into(),
@@ -86,13 +84,11 @@ impl HeaderState {
             let label = panel.label();
             let is_active = *panel == active_panel;
 
-            let btn = button(
-                text(label).size(14).color(if is_active {
-                    iced::color!(0xffffff) // White for active
-                } else {
-                    iced::color!(0xaaaaaa) // Gray for inactive
-                }),
-            )
+            let btn = button(text(label).size(14).color(if is_active {
+                iced::color!(0xffffff) // White for active
+            } else {
+                iced::color!(0xaaaaaa) // Gray for inactive
+            }))
             .padding([8, 16])
             .style(move |_theme: &iced::Theme, status: button::Status| {
                 let base_color = if is_active {
@@ -133,88 +129,86 @@ impl HeaderState {
         let luks_active = self.current_provider == ProviderKind::Luks;
         let can_switch = !self.workflow_executing;
 
-        let mut zfs_btn = button(
-            text("ZFS")
-                .size(14)
-                .color(if !can_switch {
-                    iced::color!(0x555555) // Grayed out when disabled
-                } else if zfs_active {
-                    iced::color!(0xffffff)
-                } else {
-                    iced::color!(0xaaaaaa)
-                }),
-        )
+        let mut zfs_btn = button(text("ZFS").size(14).color(if !can_switch {
+            iced::color!(0x555555) // Grayed out when disabled
+        } else if zfs_active {
+            iced::color!(0xffffff)
+        } else {
+            iced::color!(0xaaaaaa)
+        }))
         .padding([6, 12])
-        .style(move |_theme: &iced::Theme, status: button::Status| button::Style {
-            background: Some(iced::Background::Color(if !can_switch {
-                iced::color!(0x0a0a0a) // Darker when disabled
-            } else {
-                match status {
-                    button::Status::Hovered => iced::color!(0x3a3a3a),
-                    _ if zfs_active => iced::color!(0x005588),
-                    _ => iced::color!(0x1a1a1a),
-                }
-            })),
-            border: iced::Border {
-                color: if !can_switch {
-                    iced::color!(0x222222)
-                } else if zfs_active {
-                    iced::color!(0x00aaff)
+        .style(
+            move |_theme: &iced::Theme, status: button::Status| button::Style {
+                background: Some(iced::Background::Color(if !can_switch {
+                    iced::color!(0x0a0a0a) // Darker when disabled
                 } else {
-                    iced::color!(0x333333)
+                    match status {
+                        button::Status::Hovered => iced::color!(0x3a3a3a),
+                        _ if zfs_active => iced::color!(0x005588),
+                        _ => iced::color!(0x1a1a1a),
+                    }
+                })),
+                border: iced::Border {
+                    color: if !can_switch {
+                        iced::color!(0x222222)
+                    } else if zfs_active {
+                        iced::color!(0x00aaff)
+                    } else {
+                        iced::color!(0x333333)
+                    },
+                    width: if zfs_active { 2.0 } else { 1.0 },
+                    radius: 4.0.into(),
                 },
-                width: if zfs_active { 2.0 } else { 1.0 },
-                radius: 4.0.into(),
+                ..Default::default()
             },
-            ..Default::default()
-        });
+        );
 
         if can_switch {
             zfs_btn = zfs_btn.on_press(HeaderMessage::ProviderSelected(ProviderKind::Zfs));
         }
 
-        let mut luks_btn = button(
-            text("LUKS")
-                .size(14)
-                .color(if !can_switch {
-                    iced::color!(0x555555) // Grayed out when disabled
-                } else if luks_active {
-                    iced::color!(0xffffff)
-                } else {
-                    iced::color!(0xaaaaaa)
-                }),
-        )
+        let mut luks_btn = button(text("LUKS").size(14).color(if !can_switch {
+            iced::color!(0x555555) // Grayed out when disabled
+        } else if luks_active {
+            iced::color!(0xffffff)
+        } else {
+            iced::color!(0xaaaaaa)
+        }))
         .padding([6, 12])
-        .style(move |_theme: &iced::Theme, status: button::Status| button::Style {
-            background: Some(iced::Background::Color(if !can_switch {
-                iced::color!(0x0a0a0a) // Darker when disabled
-            } else {
-                match status {
-                    button::Status::Hovered => iced::color!(0x3a3a3a),
-                    _ if luks_active => iced::color!(0x884400),
-                    _ => iced::color!(0x1a1a1a),
-                }
-            })),
-            border: iced::Border {
-                color: if !can_switch {
-                    iced::color!(0x222222)
-                } else if luks_active {
-                    iced::color!(0xff6600)
+        .style(
+            move |_theme: &iced::Theme, status: button::Status| button::Style {
+                background: Some(iced::Background::Color(if !can_switch {
+                    iced::color!(0x0a0a0a) // Darker when disabled
                 } else {
-                    iced::color!(0x333333)
+                    match status {
+                        button::Status::Hovered => iced::color!(0x3a3a3a),
+                        _ if luks_active => iced::color!(0x884400),
+                        _ => iced::color!(0x1a1a1a),
+                    }
+                })),
+                border: iced::Border {
+                    color: if !can_switch {
+                        iced::color!(0x222222)
+                    } else if luks_active {
+                        iced::color!(0xff6600)
+                    } else {
+                        iced::color!(0x333333)
+                    },
+                    width: if luks_active { 2.0 } else { 1.0 },
+                    radius: 4.0.into(),
                 },
-                width: if luks_active { 2.0 } else { 1.0 },
-                radius: 4.0.into(),
+                ..Default::default()
             },
-            ..Default::default()
-        });
+        );
 
         if can_switch {
             luks_btn = luks_btn.on_press(HeaderMessage::ProviderSelected(ProviderKind::Luks));
         }
 
         let mut provider_selector_items = vec![
-            container(text("Switch Provider:").size(14)).padding([0, 10]).into(),
+            container(text("Switch Provider:").size(14))
+                .padding([0, 10])
+                .into(),
             zfs_btn.into(),
             luks_btn.into(),
         ];
