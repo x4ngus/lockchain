@@ -74,17 +74,11 @@ impl SystemLuksProvider {
     }
 
     fn set_last_error(&self, message: impl Into<String>) {
-        *self
-            .last_error
-            .lock()
-            .unwrap_or_else(|e| e.into_inner()) = Some(message.into());
+        *self.last_error.lock().unwrap_or_else(|e| e.into_inner()) = Some(message.into());
     }
 
     fn clear_last_error(&self) {
-        *self
-            .last_error
-            .lock()
-            .unwrap_or_else(|e| e.into_inner()) = None;
+        *self.last_error.lock().unwrap_or_else(|e| e.into_inner()) = None;
     }
 
     fn crypttab_entries(&self) -> LockchainResult<Vec<CrypttabEntry>> {
