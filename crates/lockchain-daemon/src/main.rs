@@ -106,7 +106,8 @@ impl HealthChannel {
 
     /// Record the latest USB availability status.
     fn set_usb_ready(&self, ready: bool) {
-        let mut state = self.inner.state.lock().unwrap();
+        // Recover from a poisoned mutex rather than crashing the daemon.
+        let mut state = self.inner.state.lock().unwrap_or_else(|e| e.into_inner());
         let changed = state.usb_ready != ready;
         state.usb_ready = ready;
         let healthy = state.usb_ready && state.unlock_ready;
@@ -118,7 +119,7 @@ impl HealthChannel {
 
     /// Record whether unlock attempts have been succeeding lately.
     fn set_unlock_ready(&self, ready: bool) {
-        let mut state = self.inner.state.lock().unwrap();
+        let mut state = self.inner.state.lock().unwrap_or_else(|e| e.into_inner());
         let changed = state.unlock_ready != ready;
         state.unlock_ready = ready;
         let healthy = state.usb_ready && state.unlock_ready;
@@ -261,26 +262,54 @@ async fn periodic_unlock(
 }
 
 /// Expose a bare-bones HTTP endpoint for readiness checks.
+///
+/// Binds to loopback only by default. Consumes the incoming HTTP request
+/// (up to a bounded read) before replying, and applies a per-connection
+/// timeout to prevent slow-loris resource exhaustion.
 async fn health_server(status_rx: watch::Receiver<bool>) -> Result<()> {
     let addr: SocketAddr = std::env::var("LOCKCHAIN_HEALTH_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:8787".to_string())
         .parse()
         .context("parse LOCKCHAIN_HEALTH_ADDR")?;
 
+    if !addr.ip().is_loopback() {
+        warn!(
+            "LOCKCHAIN_HEALTH_ADDR is set to non-loopback address {addr}; \
+             the health endpoint will be network-accessible"
+        );
+    }
+
     let listener = TcpListener::bind(addr).await?;
     info!("health endpoint listening on http://{addr}");
 
     loop {
         let (mut stream, peer) = listener.accept().await?;
-        let healthy = *status_rx.borrow();
-        let body = if healthy { "OK" } else { "DEGRADED" };
-        let response = format!(
-            "HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ncontent-length: {}\r\n\r\n{}",
-            body.len(),
-            body
-        );
-        if let Err(err) = stream.write_all(response.as_bytes()).await {
-            warn!("failed to respond to {peer}: {err}");
-        }
+        let status_rx = status_rx.clone();
+
+        // Handle each connection in a spawned task with a timeout to prevent
+        // slow-loris style resource exhaustion.
+        tokio::spawn(async move {
+            let result = tokio::time::timeout(Duration::from_secs(5), async {
+                // Drain the HTTP request (bounded read to prevent memory exhaustion).
+                let mut request_buf = vec![0u8; 4096];
+                let _ = tokio::io::AsyncReadExt::read(&mut stream, &mut request_buf).await;
+
+                let healthy = *status_rx.borrow();
+                let body = if healthy { "OK" } else { "DEGRADED" };
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\nconnection: close\r\ncontent-length: {}\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                if let Err(err) = stream.write_all(response.as_bytes()).await {
+                    warn!("failed to respond to {peer}: {err}");
+                }
+            })
+            .await;
+
+            if result.is_err() {
+                warn!("health check from {peer} timed out");
+            }
+        });
     }
 }

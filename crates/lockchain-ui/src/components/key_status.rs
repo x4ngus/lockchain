@@ -125,10 +125,10 @@ impl KeyStatus {
 
         match &self.usb {
             UsbStatus::PresentInvalid { expected, actual } => {
+                let exp_short = expected.get(..8).unwrap_or(expected);
+                let act_short = actual.get(..8).unwrap_or(actual);
                 issues.push(format!(
-                    "USB checksum mismatch (expected {}, got {})",
-                    &expected[..8],
-                    &actual[..8]
+                    "USB checksum mismatch (expected {exp_short}..., got {act_short}...)",
                 ));
             }
             UsbStatus::NotPresent => {

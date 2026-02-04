@@ -308,7 +308,7 @@ impl KeyPanel {
             .on_press(KeyMessage::ExecuteRecovery)
             .padding([10, 20]);
 
-        let note = text("Recovered key will be written to /tmp/lockchain_recovery_key").size(12);
+        let note = text("Recovered key will be staged to the configured key path").size(12);
 
         column![
             input_label,

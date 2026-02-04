@@ -46,7 +46,10 @@ pub fn derive_fallback_key(
         )));
     }
 
-    let iterations = fallback.passphrase_iters.max(1);
+    // OWASP recommends >= 600_000 for PBKDF2-HMAC-SHA256 (2023). Enforce a
+    // hard floor of 100_000 to prevent misconfiguration from gutting the KDF.
+    const MIN_PBKDF2_ITERS: u32 = 100_000;
+    let iterations = fallback.passphrase_iters.max(MIN_PBKDF2_ITERS);
     let mut derived = Zeroizing::new(vec![0u8; cipher.len()]);
     pbkdf2_hmac::<Sha256>(passphrase, &salt, iterations, &mut derived);
 

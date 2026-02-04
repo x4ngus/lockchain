@@ -989,6 +989,13 @@ impl LockchainConfig {
                     "fallback.enabled is true but fallback.passphrase_xor is missing".to_string(),
                 );
             }
+            if self.fallback.passphrase_iters < 100_000 {
+                issues.push(format!(
+                    "fallback.passphrase_iters is {} which is below the minimum of 100000; \
+                     the runtime will clamp to 100000 but the config should be corrected",
+                    self.fallback.passphrase_iters
+                ));
+            }
         }
 
         if self.retry.max_attempts == 0 {
@@ -1076,11 +1083,9 @@ impl LockchainConfig {
             .as_ref()
             .map(|meta| meta.permissions().mode())
             .unwrap_or_else(|| {
-                if self.path.starts_with("/etc/") {
-                    0o640
-                } else {
-                    0o600
-                }
+                // Config may contain fallback derivation secrets (salt, xor mask);
+                // restrict to owner-only even under /etc/.
+                0o600
             });
 
         #[cfg(unix)]
@@ -1160,12 +1165,8 @@ fn ensure_bootstrap_file(path: &Path) -> io::Result<bool> {
             file.flush()?;
             #[cfg(unix)]
             {
-                let mode = if path.starts_with("/etc/") {
-                    0o640
-                } else {
-                    0o600
-                };
-                fs::set_permissions(path, PermissionsExt::from_mode(mode))?;
+                // Owner-only: config may contain fallback derivation secrets.
+                fs::set_permissions(path, PermissionsExt::from_mode(0o600))?;
             }
             Ok(true)
         }

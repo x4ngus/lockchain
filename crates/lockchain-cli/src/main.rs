@@ -405,8 +405,8 @@ fn run() -> Result<()> {
                 usb_device: device,
                 mountpoint: mount,
                 key_filename: filename,
-                passphrase,
-                luks_passphrase,
+                passphrase: passphrase.map(Zeroizing::new),
+                luks_passphrase: luks_passphrase.map(Zeroizing::new),
                 force_wipe,
                 rebuild_initramfs: !no_rebuild,
             };

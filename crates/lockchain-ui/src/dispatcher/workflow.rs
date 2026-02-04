@@ -2,7 +2,6 @@
 //!
 //! Async functions for executing workflows against providers.
 
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use lockchain_core::config::LockchainConfig;
@@ -125,8 +124,9 @@ async fn execute_recover_key(
         RecoveryInput::Passphrase(key_material)
     };
 
-    // Use a temp output path for recovery
-    let output_path = PathBuf::from("/tmp/lockchain_recovery_key");
+    // Write recovered key to the configured staging path (secure permissions applied by
+    // write_raw_key_file). Never use a world-readable location like /tmp.
+    let output_path = config_guard.key_hex_path();
 
     match provider_kind {
         ProviderKind::Zfs | ProviderKind::Luks => workflow::recover_key(

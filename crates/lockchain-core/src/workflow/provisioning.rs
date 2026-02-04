@@ -110,15 +110,18 @@ pub enum ForgeMode {
 }
 
 /// Caller-provided knobs that influence USB selection, mounting, and post-work.
+///
+/// Passphrase fields are wrapped in [`Zeroizing`] to ensure secure memory
+/// cleanup when the struct is dropped.
 #[derive(Debug, Clone)]
 pub struct ProvisionOptions {
     pub usb_device: Option<String>,
     pub mountpoint: Option<PathBuf>,
     pub key_filename: Option<String>,
     /// Optional fallback passphrase material to encode the generated key.
-    pub passphrase: Option<String>,
+    pub passphrase: Option<Zeroizing<String>>,
     /// Existing LUKS passphrase used to enroll the generated key into a keyslot.
-    pub luks_passphrase: Option<String>,
+    pub luks_passphrase: Option<Zeroizing<String>>,
     pub force_wipe: bool,
     pub rebuild_initramfs: bool,
 }
@@ -230,7 +233,7 @@ pub fn forge_key<P: ZfsProvider<Error = LockchainError> + Clone>(
         format!("Mounted {} at {}", usb_partition, mountpoint.display()),
     ));
 
-    let mut key_material = vec![0u8; 32];
+    let mut key_material = Zeroizing::new(vec![0u8; 32]);
     OsRng.fill_bytes(&mut key_material);
     write_key_with_remount(&key_path, &key_material, &mountpoint, &mut events)?;
     if fs::metadata(&key_path)?.len() != 32 {
@@ -244,31 +247,17 @@ pub fn forge_key<P: ZfsProvider<Error = LockchainError> + Clone>(
         format!("Wrote key material to {}", key_path.display()),
     ));
 
-    // Key path the host will reference while the token is mounted.
     let dest_path = mountpoint.join(&filename);
-    // Keep a host-visible path to the token file for the USB watcher and tuning workflows.
-    let host_token_path = dest_path.clone();
-    write_key_with_remount(&host_token_path, &key_material, &mountpoint, &mut events)?;
-    if fs::metadata(&host_token_path)?.len() != 32 {
-        return Err(LockchainError::Provider(format!(
-            "destination key at {} is not 32 bytes; aborting provisioning",
-            host_token_path.display()
-        )));
-    }
-    events.push(event(
-        WorkflowLevel::Info,
-        format!("Wrote key material to {}", host_token_path.display()),
-    ));
 
-    let recovery_key_hex = hex::encode(&key_material);
-    let digest = hex::encode(Sha256::digest(&key_material));
+    let recovery_key_hex = Zeroizing::new(hex::encode(&*key_material));
+    let digest = hex::encode(Sha256::digest(&*key_material));
 
     change_encryption_key(&encryption_root, &dest_path, &mut events)?;
 
     configure_fallback_passphrase(
         &mut events,
         config,
-        options.passphrase.take(),
+        options.passphrase.take().map(|z| (*z).clone()),
         &key_material,
     )?;
     events.push(event(
@@ -375,7 +364,7 @@ pub fn forge_key<P: ZfsProvider<Error = LockchainError> + Clone>(
     Ok(WorkflowReport {
         title: format!("Forged new key for {dataset}"),
         events,
-        recovery_key: Some(recovery_key_hex),
+        recovery_key: Some((*recovery_key_hex).clone()),
     })
 }
 
@@ -393,7 +382,7 @@ pub fn forge_luks_key<P: LuksProvider<Error = LockchainError> + Clone>(
         return Err(LockchainError::DatasetNotConfigured(target.to_string()));
     }
 
-    let enroll_passphrase = options
+    let enroll_passphrase_str = options
         .luks_passphrase
         .take()
         .or_else(|| options.passphrase.clone())
@@ -402,7 +391,7 @@ pub fn forge_luks_key<P: LuksProvider<Error = LockchainError> + Clone>(
                 "existing LUKS passphrase required to enroll the LockChain key".into(),
             )
         })?;
-    let enroll_passphrase = Zeroizing::new(enroll_passphrase.into_bytes());
+    let enroll_passphrase = Zeroizing::new(enroll_passphrase_str.as_bytes().to_vec());
 
     let usb_device = resolve_usb_device(&options, config)?;
     events.push(event(
@@ -467,10 +456,10 @@ pub fn forge_luks_key<P: LuksProvider<Error = LockchainError> + Clone>(
         let _ = fs::remove_file(&pending_path);
     }
 
-    let mut key_material = vec![0u8; 32];
+    let mut key_material = Zeroizing::new(vec![0u8; 32]);
     OsRng.fill_bytes(&mut key_material);
-    let digest = hex::encode(Sha256::digest(&key_material));
-    let recovery_key_hex = hex::encode(&key_material);
+    let digest = hex::encode(Sha256::digest(&*key_material));
+    let recovery_key_hex = Zeroizing::new(hex::encode(&*key_material));
 
     write_key_with_remount(&pending_path, &key_material, &mountpoint, &mut events)?;
     if fs::metadata(&pending_path)?.len() != 32 {
@@ -509,7 +498,7 @@ pub fn forge_luks_key<P: LuksProvider<Error = LockchainError> + Clone>(
     configure_fallback_passphrase(
         &mut events,
         config,
-        options.passphrase.take(),
+        options.passphrase.take().map(|z| (*z).clone()),
         &key_material,
     )?;
     events.push(event(
@@ -609,7 +598,7 @@ pub fn forge_luks_key<P: LuksProvider<Error = LockchainError> + Clone>(
     Ok(WorkflowReport {
         title: format!("Forged new LUKS key for {target}"),
         events,
-        recovery_key: Some(recovery_key_hex),
+        recovery_key: Some((*recovery_key_hex).clone()),
     })
 }
 
