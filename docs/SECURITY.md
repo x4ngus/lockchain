@@ -7,7 +7,7 @@ How we handle disclosure, what tracks we support, and the operational controls y
 ## Coordinated Disclosure
 
 - **Primary channel:** `security@lockchain.io` (TLS enforced).  
-- **Secondary:** GitHub Security Advisories on `lockchain-org/lockchain`.  
+- **Secondary:** GitHub Security Advisories on `x4ngus/lockchain`.  
 - **Response targets:** acknowledge within 48 hours, progress updates at least weekly, and remediation plans for high-impact issues within 14 days when a root cause is understood. We will negotiate timelines if additional time is needed for safe rollout.
 - **Include in reports:** tag/commit, host OS + kernel/ZFS versions, reproduction steps, minimal config snippets (scrub secrets), and log excerpts (set `LOCKCHAIN_LOG_FORMAT=plain` to aid triage). Note any external disclosure deadlines up front.
 
@@ -86,7 +86,7 @@ Checklist:
 ## Reporting Channels
 
 - **Email:** security@lockchain.io  
-- **GitHub Security Advisories:** create a draft advisory on `lockchain-org/lockchain`.  
+- **GitHub Security Advisories:** create a draft advisory on `x4ngus/lockchain`.  
 - **Encrypted reports:** request the current PGP key via the security inbox if needed.
 
 Researchers who help secure LockChain are credited in the changelog unless anonymity is requested. We coordinate with upstream ZFS projects when issues cross boundaries.

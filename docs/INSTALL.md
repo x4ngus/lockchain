@@ -29,7 +29,7 @@ Keep `/var/lib/lockchain` reserved for the service account; the packaging script
 ### Option A — Build from Source
 
 ```bash
-git clone https://github.com/lockchain-org/lockchain.git
+git clone https://github.com/x4ngus/lockchain.git
 cd lockchain
 cargo build --release
 sudo install -Dm755 target/release/lockchain-cli /usr/local/bin/lockchain-cli
@@ -45,10 +45,10 @@ sudo ln -sf /usr/local/bin/lockchain-ui /usr/bin/lockchain-ui
 ### Option B — Consume the Signed Package
 
 ```bash
-curl -LO https://github.com/lockchain-org/lockchain/releases/latest/download/lockchain-zfs_0.2.1-1_amd64.deb
-curl -LO https://github.com/lockchain-org/lockchain/releases/latest/download/lockchain-zfs_0.2.1-1_amd64.deb.asc
-curl -LO https://github.com/lockchain-org/lockchain/releases/latest/download/SHA256SUMS
-curl -LO https://github.com/lockchain-org/lockchain/releases/latest/download/SHA256SUMS.asc
+curl -LO https://github.com/x4ngus/lockchain/releases/latest/download/lockchain-zfs_0.2.1-1_amd64.deb
+curl -LO https://github.com/x4ngus/lockchain/releases/latest/download/lockchain-zfs_0.2.1-1_amd64.deb.asc
+curl -LO https://github.com/x4ngus/lockchain/releases/latest/download/SHA256SUMS
+curl -LO https://github.com/x4ngus/lockchain/releases/latest/download/SHA256SUMS.asc
 gpg --verify SHA256SUMS.asc SHA256SUMS
 sha256sum --check SHA256SUMS
 sudo apt install ./lockchain-zfs_0.2.1-1_amd64.deb

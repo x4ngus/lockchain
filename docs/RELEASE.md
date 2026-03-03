@@ -58,17 +58,17 @@ lockchain-ui  # launch the Control Deck
 4. On published releases the assets are attached automatically. Manual
    invocations stash them as workflow artifacts instead.
 
-Monitor the workflow at <https://github.com/lockchain-org/lockchain/actions>.
+Monitor the workflow at <https://github.com/x4ngus/lockchain/actions>.
 
 ### 4. Post-release smoke test
 
 Pull the assets from the GitHub Release and validate on a clean Ubuntu 25.10 VM:
 
 ```bash
-wget https://github.com/lockchain-org/lockchain/releases/download/v0.2.1/lockchain-zfs_0.2.1-1_amd64.deb
-wget https://github.com/lockchain-org/lockchain/releases/download/v0.2.1/lockchain-zfs_0.2.1-1_amd64.deb.asc
-wget https://github.com/lockchain-org/lockchain/releases/download/v0.2.1/SHA256SUMS
-wget https://github.com/lockchain-org/lockchain/releases/download/v0.2.1/SHA256SUMS.asc
+wget https://github.com/x4ngus/lockchain/releases/download/v0.2.1/lockchain-zfs_0.2.1-1_amd64.deb
+wget https://github.com/x4ngus/lockchain/releases/download/v0.2.1/lockchain-zfs_0.2.1-1_amd64.deb.asc
+wget https://github.com/x4ngus/lockchain/releases/download/v0.2.1/SHA256SUMS
+wget https://github.com/x4ngus/lockchain/releases/download/v0.2.1/SHA256SUMS.asc
 gpg --verify SHA256SUMS.asc SHA256SUMS
 sha256sum --check SHA256SUMS
 sudo apt install ./lockchain-zfs_0.2.1-1_amd64.deb

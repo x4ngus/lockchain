@@ -37,7 +37,7 @@ Fast path, copy/paste ready. Commands are safe to run on a fresh host; root is o
 
 **1) Install & wire up services**
 ```bash
-git clone https://github.com/lockchain-org/lockchain.git
+git clone https://github.com/x4ngus/lockchain.git
 cd lockchain
 sudo ./lockchain-install.sh
 ```
