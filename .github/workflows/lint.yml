@@ -62,10 +62,10 @@ jobs:
       - name: Clippy (deny warnings)
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: MSRV check (Rust 1.78)
+      - name: MSRV check (Rust 1.85)
         run: |
-          rustup toolchain install 1.78 --profile minimal --no-self-update
-          cargo +1.78 check --workspace
+          rustup toolchain install 1.85 --profile minimal --no-self-update
+          cargo +1.85 check --workspace
 
       - name: Tests
         run: cargo test --workspace --exclude lockchain-ui
