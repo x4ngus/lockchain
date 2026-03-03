@@ -22,5 +22,5 @@ repository = "https://github.com/x4ngus/lockchain"
 homepage = "https://lockchain.io"
 categories = ["security", "filesystem", "encryption"]
 keywords = ["zfs", "luks", "encryption", "security", "usb", "gui"]
-# Minimum supported Rust version. Verify with: rustup toolchain install 1.75 && cargo +1.75 check
-rust-version = "1.75"
+# Minimum supported Rust version. Verify with: rustup toolchain install 1.78 && cargo +1.78 check
+rust-version = "1.78"
