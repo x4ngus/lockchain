@@ -671,7 +671,8 @@ fn hydrate_from_usb(
     events: &mut Vec<WorkflowEvent>,
 ) -> HydrateResult {
     // If the configured label/UUID is missing, surface a single warning and stop.
-    if config
+    // lgtm[rust/cleartext-logging] - presence check only; device identifiers, not secrets
+    let no_usb_selector = config
         .usb
         .device_label
         .as_deref()
@@ -684,8 +685,8 @@ fn hydrate_from_usb(
             .as_deref()
             .map(str::trim)
             .filter(|s| !s.is_empty())
-            .is_none()
-    {
+            .is_none();
+    if no_usb_selector {
         events.push(event(
             WorkflowLevel::Warn,
             "USB label/UUID not set; tuning cannot stage or validate key.raw on the token.",

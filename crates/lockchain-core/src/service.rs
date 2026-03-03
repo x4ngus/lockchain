@@ -21,19 +21,14 @@ pub struct UnlockOptions {
     pub key_override: Option<Zeroizing<Vec<u8>>>,
 }
 
-// Manual Clone implementation to ensure sensitive data is properly zeroized
+// Zeroizing<T> implements Clone by cloning the inner value and wrapping it in a new Zeroizing,
+// so the cloned sensitive fields will still be zeroed on drop.
 impl Clone for UnlockOptions {
     fn clone(&self) -> Self {
         Self {
             strict_usb: self.strict_usb,
-            fallback_passphrase: self
-                .fallback_passphrase
-                .as_ref()
-                .map(|p| Zeroizing::new(p.to_string())),
-            key_override: self
-                .key_override
-                .as_ref()
-                .map(|k| Zeroizing::new(k.to_vec())),
+            fallback_passphrase: self.fallback_passphrase.clone(),
+            key_override: self.key_override.clone(),
         }
     }
 }

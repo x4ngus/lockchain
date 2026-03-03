@@ -1,0 +1,19 @@
+name: Feature request
+description: Propose a new feature or enhancement
+labels: ["type:feature", "triage"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph user-facing summary.
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: "- [ ] Given/When/Then..."
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale / context

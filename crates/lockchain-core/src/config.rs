@@ -317,7 +317,7 @@ fn render_bootstrap_template(
     let device_uuid_line = usb_uuid
         .map(|uuid| uuid.trim())
         .filter(|uuid| !uuid.is_empty())
-        .map(|uuid| format!("device_uuid = \"{uuid}\""))
+        .map(|uuid| format!("device_uuid = \"{uuid}\"")) // lgtm[rust/cleartext-logging] - device UUID written intentionally to config template
         .unwrap_or_else(|| "# device_uuid = \"0000-0000\"".to_string());
 
     format!(
@@ -967,24 +967,27 @@ impl LockchainConfig {
         }
 
         if self.fallback.enabled {
-            if self
+            // Check presence only; values are derived salts, not the original passphrase.
+            // lgtm[rust/cleartext-logging]
+            let salt_missing = self
                 .fallback
                 .passphrase_salt
                 .as_deref()
                 .map(|value| value.trim().is_empty())
-                .unwrap_or(true)
-            {
+                .unwrap_or(true);
+            if salt_missing {
                 issues.push(
                     "fallback.enabled is true but fallback.passphrase_salt is missing".to_string(),
                 );
             }
-            if self
+            // lgtm[rust/cleartext-logging]
+            let xor_missing = self
                 .fallback
                 .passphrase_xor
                 .as_deref()
                 .map(|value| value.trim().is_empty())
-                .unwrap_or(true)
-            {
+                .unwrap_or(true);
+            if xor_missing {
                 issues.push(
                     "fallback.enabled is true but fallback.passphrase_xor is missing".to_string(),
                 );
