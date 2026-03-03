@@ -32,10 +32,12 @@ pub fn derive_fallback_key(
         .filter(|value| !value.is_empty())
         .ok_or_else(|| LockchainError::InvalidConfig("fallback.passphrase_xor missing".into()))?;
 
-    let salt = Vec::from_hex(salt_hex)
-        .map_err(|_| LockchainError::InvalidConfig("fallback.passphrase_salt is not valid hex".into()))?;
-    let cipher = Vec::from_hex(xor_hex)
-        .map_err(|_| LockchainError::InvalidConfig("fallback.passphrase_xor is not valid hex".into()))?;
+    let salt = Vec::from_hex(salt_hex).map_err(|_| {
+        LockchainError::InvalidConfig("fallback.passphrase_salt is not valid hex".into())
+    })?;
+    let cipher = Vec::from_hex(xor_hex).map_err(|_| {
+        LockchainError::InvalidConfig("fallback.passphrase_xor is not valid hex".into())
+    })?;
 
     if cipher.len() != 32 {
         return Err(LockchainError::InvalidConfig(format!(

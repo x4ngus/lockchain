@@ -241,7 +241,8 @@ async fn periodic_unlock(
                 if report.already_unlocked {
                     info!("target {target} already unlocked");
                 } else {
-                    info!("unlocked {target} with {} nodes", report.unlocked.len()); // lgtm[rust/cleartext-logging] - dataset count and name; not sensitive
+                    // lgtm[rust/cleartext-logging] - dataset count and name; not sensitive
+                    info!("unlocked {target} with {} nodes", report.unlocked.len());
                 }
                 health.set_unlock_ready(true);
                 last_success = Instant::now();

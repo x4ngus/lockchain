@@ -2786,7 +2786,10 @@ mod tests {
         fs::write(dir.path().join("key.raw"), &key_material).unwrap();
 
         // Test with valid passphrase
-        let result = update_fallback_passphrase(&mut config, Some(Zeroizing::new("new-passphrase".to_string())));
+        let result = update_fallback_passphrase(
+            &mut config,
+            Some(Zeroizing::new("new-passphrase".to_string())),
+        );
 
         assert!(result.is_ok());
 
