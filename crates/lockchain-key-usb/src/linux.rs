@@ -510,6 +510,7 @@ impl UsbKeyDaemon {
 
         if let Some(expected) = &self.config.usb.device_uuid {
             let uuid = device.property_value("ID_FS_UUID").and_then(os_str_to_str);
+            // lgtm[rust/cleartext-logging] - device UUID comparison; not logged, not a secret
             if uuid.map(|value| value != expected).unwrap_or(true) {
                 return false;
             }

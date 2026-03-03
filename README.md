@@ -185,6 +185,7 @@ All surfaces emit machine-readable error codes prefixed with `LC`, making SOC in
 
 ## Further Reading
 
+- [`TODO.md`](TODO.md) — active task list and development backlog.
 - [`docs/INSTALL.md`](docs/INSTALL.md) — deployment runbook for operations and platform teams.  
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — component map and integration touchpoints.  
 - [`docs/PROVIDERS.md`](docs/PROVIDERS.md) — provider contracts and capability matrix.  

@@ -257,7 +257,7 @@ pub fn forge_key<P: ZfsProvider<Error = LockchainError> + Clone>(
     configure_fallback_passphrase(
         &mut events,
         config,
-        options.passphrase.take().map(|z| (*z).clone()),
+        options.passphrase.take(),
         &key_material,
     )?;
     events.push(event(
@@ -498,7 +498,7 @@ pub fn forge_luks_key<P: LuksProvider<Error = LockchainError> + Clone>(
     configure_fallback_passphrase(
         &mut events,
         config,
-        options.passphrase.take().map(|z| (*z).clone()),
+        options.passphrase.take(),
         &key_material,
     )?;
     events.push(event(
@@ -929,7 +929,7 @@ pub fn discover_usb_candidates() -> LockchainResult<Vec<UsbCandidate>> {
 /// Configure or disable the fallback passphrase using existing key material on disk.
 pub fn update_fallback_passphrase(
     config: &mut LockchainConfig,
-    passphrase: Option<String>,
+    passphrase: Option<Zeroizing<String>>,
 ) -> LockchainResult<Vec<WorkflowEvent>> {
     let mut events = Vec::new();
     let key_path = config.key_hex_path();
@@ -1293,7 +1293,7 @@ fn detect_partition_uuid(partition: &str) -> LockchainResult<Option<String>> {
 fn configure_fallback_passphrase(
     events: &mut Vec<WorkflowEvent>,
     config: &mut LockchainConfig,
-    passphrase: Option<String>,
+    passphrase: Option<Zeroizing<String>>,
     key_material: &[u8],
 ) -> LockchainResult<()> {
     if let Some(passphrase) = passphrase {
@@ -1598,7 +1598,7 @@ impl DracutInstallRequest<'_> {
             dest_path: self.dest_path.to_string_lossy().into_owned(),
             key_filename: self.key_filename.to_string(),
             checksum: self.checksum.map(|s| s.to_string()),
-            token_uuid: self.token_uuid.map(|s| s.to_string()),
+            token_uuid: self.token_uuid.map(|s| s.to_string()), // lgtm[rust/cleartext-logging] - LUKS token UUID written to dracut config, not a secret
             datasets: self.datasets.to_vec(),
             mappings: self.mappings.to_vec(),
         }
@@ -2575,7 +2575,7 @@ mod tests {
         let result = configure_fallback_passphrase(
             &mut events,
             &mut config,
-            Some("test-passphrase".to_string()),
+            Some(Zeroizing::new("test-passphrase".to_string())),
             &key_material,
         );
 
@@ -2630,7 +2630,7 @@ mod tests {
         configure_fallback_passphrase(
             &mut events,
             &mut config1,
-            Some("test-passphrase".to_string()),
+            Some(Zeroizing::new("test-passphrase".to_string())),
             &key_material,
         )
         .unwrap();
@@ -2638,7 +2638,7 @@ mod tests {
         configure_fallback_passphrase(
             &mut events,
             &mut config2,
-            Some("test-passphrase".to_string()),
+            Some(Zeroizing::new("test-passphrase".to_string())),
             &key_material,
         )
         .unwrap();
@@ -2786,7 +2786,7 @@ mod tests {
         fs::write(dir.path().join("key.raw"), &key_material).unwrap();
 
         // Test with valid passphrase
-        let result = update_fallback_passphrase(&mut config, Some("new-passphrase".to_string()));
+        let result = update_fallback_passphrase(&mut config, Some(Zeroizing::new("new-passphrase".to_string())));
 
         assert!(result.is_ok());
 

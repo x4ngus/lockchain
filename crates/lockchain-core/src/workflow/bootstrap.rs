@@ -176,6 +176,7 @@ pub fn bootstrap_plan(options: &BootstrapOptions) -> LockchainResult<BootstrapPl
         .filter(|label| !label.is_empty())
         .or_else(|| Some(default_usb_label().to_string()));
 
+    // lgtm[rust/cleartext-logging] - device UUID used for bootstrap plan output, not a secret
     let usb_uuid = options
         .usb_uuid
         .as_ref()

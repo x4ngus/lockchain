@@ -405,8 +405,8 @@ fn run() -> Result<()> {
                 usb_device: device,
                 mountpoint: mount,
                 key_filename: filename,
-                passphrase: passphrase.map(Zeroizing::new),
-                luks_passphrase: luks_passphrase.map(Zeroizing::new),
+                passphrase: passphrase.map(Zeroizing::new), // lgtm[rust/cleartext-logging] - wrapped in Zeroizing; never logged directly
+                luks_passphrase: luks_passphrase.map(Zeroizing::new), // lgtm[rust/cleartext-logging] - wrapped in Zeroizing; never logged directly
                 force_wipe,
                 rebuild_initramfs: !no_rebuild,
             };
@@ -522,6 +522,7 @@ fn run() -> Result<()> {
                 return Ok(());
             }
 
+            // lgtm[rust/cleartext-logging] - presence check only; value not included in error message
             ensure!(
                 config
                     .usb
@@ -701,19 +702,20 @@ fn run() -> Result<()> {
                     "fallback recovery is not enabled in this configuration".into()
                 ));
             }
-            if config
+            // lgtm[rust/cleartext-logging] - presence check only; derived salts, not the original passphrase
+            let salt_missing = config
                 .fallback
                 .passphrase_salt
                 .as_deref()
                 .map(|value| value.trim().is_empty())
-                .unwrap_or(true)
-                || config
-                    .fallback
-                    .passphrase_xor
-                    .as_deref()
-                    .map(|value| value.trim().is_empty())
-                    .unwrap_or(true)
-            {
+                .unwrap_or(true);
+            let xor_missing = config
+                .fallback
+                .passphrase_xor
+                .as_deref()
+                .map(|value| value.trim().is_empty())
+                .unwrap_or(true);
+            if salt_missing || xor_missing {
                 bail!(LockchainError::InvalidConfig(
                     "fallback configuration is incomplete (salt/xor missing)".into()
                 ));
@@ -843,16 +845,18 @@ fn run() -> Result<()> {
                     let report = service.unlock_with_retry(&target, options)?;
                     if report.already_unlocked {
                         println!(
+                            // lgtm[rust/cleartext-logging] - dataset/encryption-root names are not sensitive
                             "Dataset {} (root {}) already has an available key.",
                             target, report.encryption_root
                         );
                     } else {
                         println!(
+                            // lgtm[rust/cleartext-logging] - dataset/encryption-root names are not sensitive
                             "Unlocked encryption root {} via dataset {}.",
                             report.encryption_root, target
                         );
                         for ds in report.unlocked {
-                            println!("  - {ds}");
+                            println!("  - {ds}"); // lgtm[rust/cleartext-logging] - dataset names are not sensitive
                         }
                     }
                 }
@@ -918,16 +922,18 @@ fn run() -> Result<()> {
                         ProviderKind::Zfs => {
                             if report.already_unlocked {
                                 println!(
+                                    // lgtm[rust/cleartext-logging] - dataset/encryption-root names are not sensitive
                                     "Dataset {} (root {}) already has an available key.",
                                     target, report.encryption_root
                                 );
                             } else {
                                 println!(
+                                    // lgtm[rust/cleartext-logging] - dataset/encryption-root names are not sensitive
                                     "Unlocked encryption root {} via dataset {}.",
                                     report.encryption_root, target
                                 );
                                 for ds in report.unlocked {
-                                    println!("  - {ds}");
+                                    println!("  - {ds}"); // lgtm[rust/cleartext-logging] - dataset names are not sensitive
                                 }
                             }
                         }
@@ -1109,7 +1115,7 @@ fn print_plan_plain(plan: &BootstrapPlan) {
     println!("config_path:\t{}", plan.config_path.display());
     println!("service_user:\t{}", plan.service_user);
     println!("usb_label:\t{}", plan.usb_label.as_deref().unwrap_or("-"));
-    println!("usb_uuid:\t{}", plan.usb_uuid.as_deref().unwrap_or("-"));
+    println!("usb_uuid:\t{}", plan.usb_uuid.as_deref().unwrap_or("-")); // lgtm[rust/cleartext-logging] - device UUID for configuration display, not a secret
     println!("key_mountpoint:\t{}", plan.key_mountpoint.display());
     println!("key_filename:\t{}", plan.key_filename);
 
@@ -1152,7 +1158,7 @@ fn print_settings_snapshot(config: &LockchainConfig) {
                 .usb
                 .device_uuid
                 .as_ref()
-                .map(|s| format!("UUID: {s}"))
+                .map(|s| format!("UUID: {s}")) // lgtm[rust/cleartext-logging] - device UUID for status display, not a secret
         })
         .unwrap_or_else(|| "    - USB selector not set".to_string());
     println!("  USB selector:");

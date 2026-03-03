@@ -54,7 +54,13 @@ cargo tarpaulin --workspace --ignore-tests  # include results in the PR when app
 
 ## Release Workflow (maintainers)
 
-1. Update the root `CHANGELOG.md` with a concise entry (follow `docs/RELEASE.md`).  
+**CHANGELOG entry format** (`CHANGELOG.md` header comment has the canonical spec):
+```
+## vX.Y.Z — Title (DD-MM-YYYY)
+**Highlights** / **Fixes** / **Docs & UX** / **Chore** (use only what applies)
+```
+
+1. Update the root `CHANGELOG.md` with a concise entry using the format above.  
 2. Tag and push the release (e.g. `v0.2.1`); automation produces signed `.deb` assets.  
 3. Attach only supplemental artefacts; the workflow already uploads the `.deb`, signatures, and checksums.
 

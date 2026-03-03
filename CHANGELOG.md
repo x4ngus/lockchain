@@ -1,8 +1,18 @@
 # Changelog // LockChain
 
-> _"Version numbers are just coordinates through space and time."_  
+> _"Version numbers are just coordinates through space and time."_
 
-All notable changes to this project will be documented here. The cadence follows semantic versioning once we cross the `v1.x` threshold. Until then we will log every milestone release to keep users updated of what the latest version contains.
+<!--
+Format: ## vX.Y.Z — Title (DD-MM-YYYY)
+Sub-sections (use only what applies):
+  **Highlights** — behavioural changes and new features
+  **Fixes**      — bug fixes and regressions
+  **Docs & UX**  — documentation, logging, and UI changes
+  **Chore**      — dependency bumps, CI, refactors with no behaviour change
+Keep entries concise. One line per item. Reference ADRs or issues where useful.
+-->
+
+All notable changes to this project are documented here. Follows semantic versioning after `v1.0`; until then every milestone release is logged.
 
 ## v0.2.1 — LockChain Unified Baseline (14-12-2025)
 
@@ -15,7 +25,12 @@ All notable changes to this project will be documented here. The cadence follows
 - Adds `docs/PROVIDERS.md`, `docs/UI.md`, and ADR-003 for LUKS deployment patterns.
 - Refreshes provider architecture notes to reflect the multi-provider layout.
 
-## Legacy (LockChain ZFS lineage)
+---
+
+## Earlier Releases — ZFS-only lineage
+
+> These entries predate the repo consolidation at v0.2.1. The project was previously split across
+> `x4ngus/lockchain-zfs` and `lockchain-org/lockchain`; history is preserved here for continuity.
 
 ## v0.2.0-alpha — LockChain Access Ramp (01-12-2025)
 

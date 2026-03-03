@@ -1,0 +1,12 @@
+name: Security report (public tracker placeholder)
+description: Do NOT put sensitive details here. Use the Security Advisory link instead.
+labels: ["type:security", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        For sensitive reports, please use the private Security Advisory flow linked in the issue templates config.
+  - type: textarea
+    id: summary
+    attributes:
+      label: High-level summary (no secrets)
